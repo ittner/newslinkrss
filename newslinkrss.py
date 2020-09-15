@@ -160,6 +160,68 @@ class CollectAttributesParser(HTMLParser):
             self._title_lst = None
 
 
+def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
+    try:
+        req = session.get(url, timeout=args.http_timeout)
+    except (
+        urllib3.exceptions.ReadTimeoutError,
+        requests.exceptions.ReadTimeout,
+    ) as exc:
+        # We should handle this somehow.
+        return None
+
+    if req.url in used_urls:
+        return None
+
+    used_urls.add(req.url)
+    attr_parser = CollectAttributesParser()
+    description = ""
+    if req.status_code == 200:
+        if attr_parser.description:
+            description = attr_parser.description
+        attr_parser.feed(req.text)
+    else:
+        description += "Page returned status code %d<br/>" % req.status_code
+
+    # Give a meaningful title for this entry.
+    clean_title = attr_parser.title or attr_parser.canonical or req.url
+    if clean_title == base_attrs.title:
+        # The title is the same as the one from base url, a typical thing
+        # from horribly-designed news pages (and also happens on a
+        # government site I need to consult from time to time), so
+        # replace it with the contents of the link text, which should
+        # give a bit more useful information for the reader.
+        description += "Original title: %s<br/>" % clean_title
+        clean_title = link_text
+
+    description += "Link text: %s" % link_text
+
+    # Try to get a meaningful last modification date.
+    date = None
+    if attr_parser.changed:
+        date = attr_parser.changed
+
+    return PyRSS2Gen.RSSItem(
+        title=clean_title,
+        link=attr_parser.canonical or req.url,
+        description=description,
+        guid=PyRSS2Gen.Guid(req.url),
+        pubDate=date,
+    )
+
+
+def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
+    if url in used_urls:
+        return None
+    used_urls.add(url)
+    return PyRSS2Gen.RSSItem(
+        title=link_text,
+        link=url,
+        description=link_text,
+        guid=PyRSS2Gen.Guid(url),
+    )
+
+
 def make_feed(args):
 
     base_url = args.url
@@ -189,55 +251,16 @@ def make_feed(args):
     rss_items = []
     for itm in base_links:
         new_url = requests.compat.urljoin(request_base, itm[0])
-        try:
-            req = session.get(new_url, timeout=args.http_timeout)
-        except (
-            urllib3.exceptions.ReadTimeoutError,
-            requests.exceptions.ReadTimeout,
-        ) as exc:
-            # We should handle this somehow.
-            continue
-        if req.url in used_urls:
-            continue
-        used_urls.add(req.url)
-        attr_parser = CollectAttributesParser()
-        description = ""
-        if req.status_code == 200:
-            if attr_parser.description:
-                description = attr_parser.description
-            attr_parser.feed(req.text)
-        else:
-            description += "Page returned status code %d<br/>" % req.status_code
-
-        # print(req.status_code, new_url, attr_parser.title, itm)
-
-        # Give a meaningful title for this entry.
-        clean_title = attr_parser.title or attr_parser.canonical or req.url
-        if clean_title == base_attrs.title:
-            # The title is the same as the one from base url, a typical thing
-            # from horribly-designed news pages (and also happens on a
-            # government site I need to consult from time to time), so
-            # replace it with the contents of the link text, which should
-            # give a bit more useful information for the reader.
-            description += "Original title: %s<br/>" % clean_title
-            clean_title = itm[1]
-
-        description += "Link text: %s" % itm[1]
-
-        # Try to get a meaningful last modification date.
-        date = None
-        if attr_parser.changed:
-            date = attr_parser.changed
-
-        rss_items.append(
-            PyRSS2Gen.RSSItem(
-                title=clean_title,
-                link=attr_parser.canonical or req.url,
-                description=description,
-                guid=PyRSS2Gen.Guid(req.url),
-                pubDate=date,
+        if args.no_follow:
+            ret_item = make_feed_item_nofollow(
+                new_url, used_urls, args, itm[1], base_attrs
             )
-        )
+        else:
+            ret_item = make_feed_item_follow(
+                session, new_url, used_urls, args, itm[1], base_attrs
+            )
+        if ret_item:
+            rss_items.append(ret_item)
 
     rss = PyRSS2Gen.RSS2(
         title=base_attrs.title or base_url,
@@ -280,6 +303,19 @@ def main():
         action="store",
         default=".+",
         help="A regex to filter the URLs of links that the script will follow.",
+    )
+
+    parser.add_argument(
+        "-N",
+        "--no-follow",
+        action="store_true",
+        default=False,
+        help=(
+            "Do not follow links to generate the feed, just make them with "
+            + "the information we can gather from the base URL. It is "
+            + "faster and spares the target site from a lot of requests, "
+            + "but we can't have any detailed information."
+        ),
     )
 
     parser.add_argument(
