@@ -8,7 +8,7 @@ import re
 import logging
 import PyRSS2Gen
 import datetime
-import dateutil
+import dateutil.parser
 import argparse
 import urllib3
 
@@ -124,7 +124,12 @@ class CollectAttributesParser(HTMLParser):
             # contents appear nicely when linked on Facebook, Twitter and so.
             # These can provide a lot of useful information.
 
-            if prop == "article:published_time" or prop == "article:modified_time":
+            if (
+                prop == "article:published_time"
+                or prop == "article:modified_time"
+                or name == "article:published_time"
+                or name == "article:modified_time"
+            ):
                 # Content is a date in ISO format.
                 # <meta property="article:published_time" content="2020-09-13T20:00:00+00:00" />
                 # <meta property="article:modified_time" content="2020-09-13T20:01:42+00:00" />
