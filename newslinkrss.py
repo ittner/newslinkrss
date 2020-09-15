@@ -212,7 +212,7 @@ def make_feed(args):
         # print(req.status_code, new_url, attr_parser.title, itm)
 
         # Give a meaningful title for this entry.
-        clean_title = attr_parser.title or attr_parser.canonical or new_url
+        clean_title = attr_parser.title or attr_parser.canonical or req.url
         if clean_title == base_attrs.title:
             # The title is the same as the one from base url, a typical thing
             # from horribly-designed news pages (and also happens on a
@@ -232,9 +232,9 @@ def make_feed(args):
         rss_items.append(
             PyRSS2Gen.RSSItem(
                 title=clean_title,
-                link=attr_parser.canonical or new_url,
+                link=attr_parser.canonical or req.url,
                 description=description,
-                guid=PyRSS2Gen.Guid(new_url),
+                guid=PyRSS2Gen.Guid(req.url),
                 pubDate=date,
             )
         )
