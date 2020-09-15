@@ -184,7 +184,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         description += "Page returned status code %d<br/>" % req.status_code
 
     # Give a meaningful title for this entry.
-    clean_title = attr_parser.title or attr_parser.canonical or req.url
+    clean_title = attr_parser.title or link_text or attr_parser.canonical or req.url
     if clean_title == base_attrs.title:
         # The title is the same as the one from base url, a typical thing
         # from horribly-designed news pages (and also happens on a
