@@ -47,7 +47,11 @@ class CollectLinksParser(HTMLParser):
             href = _first_valid_attr_in_list(attrs, "href")
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
-            if href and href not in self.links and (not self.url_patt or re.match(self.url_patt, href)):
+            if (
+                href
+                and href not in self.links
+                and (not self.url_patt or re.match(self.url_patt, href))
+            ):
                 self._last_link_text = []
                 self._grab_link_text = True
                 self._last_link = href
@@ -187,7 +191,10 @@ def make_feed(args):
         new_url = requests.compat.urljoin(request_base, itm[0])
         try:
             req = session.get(new_url, timeout=args.http_timeout)
-        except (urllib3.exceptions.ReadTimeoutError, requests.exceptions.ReadTimeout) as exc:
+        except (
+            urllib3.exceptions.ReadTimeoutError,
+            requests.exceptions.ReadTimeout,
+        ) as exc:
             # We should handle this somehow.
             continue
         if req.url in used_urls:
