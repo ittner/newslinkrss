@@ -30,10 +30,11 @@ def _first_valid_attr_in_list(attrs, name):
 
 
 class CollectLinksParser(HTMLParser):
-    def __init__(self, url_patt=None, max_items=None):
+    def __init__(self, url_patt=None, max_items=None, base_url=None):
         HTMLParser.__init__(self)
         self.url_patt = url_patt
         self.max_items = max_items
+        self.base_url = base_url
         self.links = []
         self._last_link_text = None
         self._grab_link_text = False
@@ -45,12 +46,15 @@ class CollectLinksParser(HTMLParser):
 
         if tag == "a":
             href = _first_valid_attr_in_list(attrs, "href")
+            if not href:
+                return
+            if self.base_url:
+                href = requests.compat.urljoin(self.base_url, href)
+
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
-            if (
-                href
-                and href not in self.links
-                and (not self.url_patt or re.match(self.url_patt, href))
+            if href not in self.links and (
+                not self.url_patt or re.match(self.url_patt, href)
             ):
                 self._last_link_text = []
                 self._grab_link_text = True
@@ -239,11 +243,6 @@ def make_feed(args):
 
     req = session.get(base_url, timeout=args.http_timeout)
 
-    # Grab any links of interest from the base URL.
-    link_grabber = CollectLinksParser(args.link_pattern, args.max_links)
-    link_grabber.feed(req.text)
-    base_links = link_grabber.links
-
     # Get relevant attributes from base URL.
     base_attrs = CollectAttributesParser()
     base_attrs.feed(req.text)
@@ -252,19 +251,23 @@ def make_feed(args):
     session.headers["Referer"] = req.url
     request_base = base_attrs.base or req.url
 
+    # Grab any links of interest from the base URL.
+    link_grabber = CollectLinksParser(args.link_pattern, args.max_links, request_base)
+    link_grabber.feed(req.text)
+    base_links = link_grabber.links
+
     # URLs that where already processed (considering redirects).
     used_urls = set()
 
     rss_items = []
     for itm in base_links:
-        new_url = requests.compat.urljoin(request_base, itm[0])
         if args.no_follow:
             ret_item = make_feed_item_nofollow(
-                new_url, used_urls, args, itm[1], base_attrs
+                itm[0], used_urls, args, itm[1], base_attrs
             )
         else:
             ret_item = make_feed_item_follow(
-                session, new_url, used_urls, args, itm[1], base_attrs
+                session, itm[0], used_urls, args, itm[1], base_attrs
             )
         if ret_item:
             rss_items.append(ret_item)
