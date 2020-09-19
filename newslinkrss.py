@@ -200,6 +200,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         clean_title = link_text
 
     description += "Link text: %s" % link_text
+    clean_title = clean_title[: args.max_title_length]
 
     # Try to get a meaningful last modification date.
     date = None
@@ -219,8 +220,9 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
     if url in used_urls:
         return None
     used_urls.add(url)
+    clean_title = link_text[: args.max_title_length]
     return PyRSS2Gen.RSSItem(
-        title=link_text,
+        title=clean_title,
         link=url,
         description=link_text,
         guid=PyRSS2Gen.Guid(url),
@@ -267,8 +269,11 @@ def make_feed(args):
         if ret_item:
             rss_items.append(ret_item)
 
+    title = base_attrs.title or base_url
+    title = title[: args.max_title_length]
+
     rss = PyRSS2Gen.RSS2(
-        title=base_attrs.title or base_url,
+        title=title,
         link=base_url,
         description=base_attrs.description
         or base_attrs.title
@@ -300,6 +305,15 @@ def main():
         default=50,
         type=int,
         help="Maximum number of links to follow.",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--max-title-length",
+        action="store",
+        default=150,
+        type=int,
+        help="Maximum length of a feed title, in characters.",
     )
 
     parser.add_argument(
