@@ -54,6 +54,7 @@ class CollectLinksParser(HTMLParser):
         self.max_items = max_items
         self.base_url = base_url
         self.links = []
+        self.limit_reached = False
         self._found_links = set()
         self._last_link_text = None
         self._grab_link_text = False
@@ -61,6 +62,7 @@ class CollectLinksParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if (self.max_items != None) and (len(self.links) >= self.max_items):
+            self.limit_reached = True
             return
 
         if tag == "a":
@@ -277,7 +279,9 @@ def make_feed(args):
     base_links = link_grabber.links
 
     if args.debug_links:
-        for itm in base_links:
+        if link_grabber.limit_reached:
+            print("# Limit of %d links was reached." % (link_grabber.max_items))
+        for itm in link_grabber.links:
             print(itm[0])
         return
 
