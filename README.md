@@ -7,7 +7,7 @@ information
 
 The results are output as a RSS feed to stdout or, optionally, a file.
 
-Run `./newslinkrss.py --help` for the complete command line details.
+Run `./newslinkrss --help` for the complete command line details.
 
 
 
