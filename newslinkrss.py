@@ -283,7 +283,7 @@ def make_feed(args):
     title = title[: args.max_title_length]
 
     rss = PyRSS2Gen.RSS2(
-        title=title,
+        title=args.title or title,
         link=base_url,
         description=base_attrs.description
         or base_attrs.title
@@ -332,6 +332,14 @@ def main():
         action="store",
         default=".+",
         help="A regex to filter the URLs of links that the script will follow.",
+    )
+
+    parser.add_argument(
+        "-T",
+        "--title",
+        action="store",
+        default=None,
+        help="Use this alternate title for the feed.",
     )
 
     parser.add_argument(
