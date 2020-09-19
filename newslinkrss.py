@@ -256,6 +256,11 @@ def make_feed(args):
     link_grabber.feed(req.text)
     base_links = link_grabber.links
 
+    if args.debug_links:
+        for itm in base_links:
+            print(itm[0])
+        return
+
     # URLs that where already processed (considering redirects).
     used_urls = set()
 
@@ -325,6 +330,17 @@ def main():
         action="store",
         default=".+",
         help="A regex to filter the URLs of links that the script will follow.",
+    )
+
+    parser.add_argument(
+        "--debug-links",
+        action="store_true",
+        default=False,
+        help=(
+            "Do not generate the feed, but just print to stdout the links "
+            + "that were discovered and would be included or followed when "
+            + "generating. Useful for debugging link patterns."
+        ),
     )
 
     parser.add_argument(
