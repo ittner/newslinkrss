@@ -290,13 +290,13 @@ def make_feed(args):
 
     rss_items = []
     for itm in base_links:
-        if args.no_follow:
-            ret_item = make_feed_item_nofollow(
-                itm[0], used_urls, args, itm[1], base_attrs
-            )
-        else:
+        if args.follow:
             ret_item = make_feed_item_follow(
                 session, itm[0], used_urls, args, itm[1], base_attrs
+            )
+        else:
+            ret_item = make_feed_item_nofollow(
+                itm[0], used_urls, args, itm[1], base_attrs
             )
         if ret_item:
             rss_items.append(ret_item)
@@ -376,15 +376,14 @@ def main():
     )
 
     parser.add_argument(
-        "-N",
-        "--no-follow",
+        "-f",
+        "--follow",
         action="store_true",
         default=False,
         help=(
-            "Do not follow links to generate the feed, just make them with "
-            + "the information we can gather from the base URL. It is "
-            + "faster and spares the target site from a lot of requests, "
-            + "but we can't have any detailed information."
+            "Follow every matching link to gather more information. It is "
+            + "slower and sends extra requests to the site, but allows higher "
+            + "quality feeds."
         ),
     )
 
