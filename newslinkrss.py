@@ -36,6 +36,7 @@ class CollectLinksParser(HTMLParser):
         self.max_items = max_items
         self.base_url = base_url
         self.links = []
+        self._found_links = set()
         self._last_link_text = None
         self._grab_link_text = False
         self._last_link = None
@@ -53,7 +54,7 @@ class CollectLinksParser(HTMLParser):
 
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
-            if href not in self.links and (
+            if href not in self._found_links and (
                 not self.url_patt or re.match(self.url_patt, href)
             ):
                 self._last_link_text = []
@@ -70,7 +71,8 @@ class CollectLinksParser(HTMLParser):
             if self._grab_link_text:
                 self._grab_link_text = False
                 link_text = "".join(self._last_link_text)
-            if self._last_link:
+            if self._last_link and self._last_link not in self._found_links:
+                self._found_links.add(self._last_link)
                 self.links.append((self._last_link, link_text))
             self._last_link = False
 
