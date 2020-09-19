@@ -60,7 +60,7 @@ class CollectLinksParser(HTMLParser):
         self._last_link = None
 
     def handle_starttag(self, tag, attrs):
-        if (self.max_items != None) and (len(self.links) > self.max_items):
+        if (self.max_items != None) and (len(self.links) >= self.max_items):
             return
 
         if tag == "a":
