@@ -216,6 +216,10 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     else:
         description += "Page returned status code %d<br/>" % req.status_code
 
+    # We need a date but the page have none. Skip this entry.
+    if args.require_dates and not attr_parser.changed:
+        return None
+
     # Give a meaningful title for this entry.
     clean_title = attr_parser.title or link_text or attr_parser.canonical or req.url
     if clean_title == base_attrs.title:
@@ -377,7 +381,7 @@ def main():
         ),
     )
 
-    parser.add_argument(
+    follow_arg = parser.add_argument(
         "-f",
         "--follow",
         action="store_true",
@@ -387,6 +391,18 @@ def main():
             + "slower and sends extra requests to the site, but allows higher "
             + "quality feeds."
         ),
+    )
+
+    require_dates_arg = parser.add_argument(
+        "--require-dates",
+        action="store_true",
+        default=False,
+        help=(
+            "Only include a entry in the feed if it has a parseable date. "
+            + "Very useful when filtering blogs and news sites. "
+            + "This option requires %s."
+        )
+        % (follow_arg.option_strings[0]),
     )
 
     parser.add_argument(
@@ -416,6 +432,14 @@ def main():
     parser.add_argument("url", action="store", help="Base URL to start downloading")
 
     args = parser.parse_args()
+
+    if args.require_dates and not args.follow:
+        sys.stderr.write(
+            "Argument %s only works with %s.\n"
+            % (require_dates_arg.option_strings[0], follow_arg.option_strings[0])
+        )
+        return
+
     # print(args)
     make_feed(args)
 
