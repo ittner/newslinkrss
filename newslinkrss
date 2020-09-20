@@ -196,27 +196,35 @@ class CollectAttributesParser(HTMLParser):
 
 
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
+
+    attr_parser = CollectAttributesParser()
+    description = ""
+    req = None
     try:
-        req = session.get(url, timeout=args.http_timeout)
+        req = session.get(url, timeout=args.http_timeout, stream=True)
+        if req.url in used_urls:
+            return None
+        used_urls.add(req.url)
+        if req.status_code == 200:
+            if attr_parser.description:
+                description = attr_parser.description
+            consumed_size = 0
+            for chunk in req.iter_content(chunk_size=100 * 1024, decode_unicode=True):
+                if consumed_size >= 1024 * args.max_page_length:
+                    break
+                consumed_size += len(chunk)
+                attr_parser.feed(chunk)
+        else:
+            description += "Page returned status code %d<br/>" % req.status_code
     except (
         urllib3.exceptions.ReadTimeoutError,
         requests.exceptions.ReadTimeout,
     ) as exc:
         # We should handle this somehow.
         return None
-
-    if req.url in used_urls:
-        return None
-
-    used_urls.add(req.url)
-    attr_parser = CollectAttributesParser()
-    description = ""
-    if req.status_code == 200:
-        if attr_parser.description:
-            description = attr_parser.description
-        attr_parser.feed(req.text)
-    else:
-        description += "Page returned status code %d<br/>" % req.status_code
+    finally:
+        if req:
+            req.close()
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not attr_parser.changed:
@@ -271,11 +279,23 @@ def make_feed(args):
         "User-Agent": args.user_agent,
     }
 
-    req = session.get(base_url, timeout=args.http_timeout)
+    page_content = ""
+    req = None
+    try:
+        req = session.get(base_url, timeout=args.http_timeout, stream=True)
+        consumed_size = 0
+        for chunk in req.iter_content(chunk_size=100 * 1024, decode_unicode=True):
+            if consumed_size >= 1024 * args.max_page_length:
+                break
+            consumed_size += len(chunk)
+            page_content += chunk
+    finally:
+        if req:
+            req.close()
 
     # Get relevant attributes from base URL.
     base_attrs = CollectAttributesParser()
-    base_attrs.feed(req.text)
+    base_attrs.feed(page_content)
 
     # From now, we should use req.url because of redirects.
     session.headers["Referer"] = req.url
@@ -283,7 +303,7 @@ def make_feed(args):
 
     # Grab any links of interest from the base URL.
     link_grabber = CollectLinksParser(args.link_pattern, args.max_links, request_base)
-    link_grabber.feed(req.text)
+    link_grabber.feed(page_content)
     base_links = link_grabber.links
 
     if args.debug_links:
@@ -413,6 +433,19 @@ def main():
         action="store",
         default=DEFAULT_USER_AGENT,
         help="Use an alternate user agent. Default is '%s'" % DEFAULT_USER_AGENT,
+    )
+
+    parser.add_argument(
+        "--max-page-length",
+        action="store",
+        default=2048,
+        type=int,
+        help=(
+            "Maximum amount of data to download from a single HTTP request, "
+            + "in kB. If this limit is exceeded, any remaining data will be "
+            + "discarded (very important when following links, because the "
+            + "page can led us into downloading a DVD ISO or something like)."
+        ),
     )
 
     parser.add_argument(
