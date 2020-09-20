@@ -69,6 +69,8 @@ class CollectLinksParser(HTMLParser):
             href = _first_valid_attr_in_list(attrs, "href")
             if not href:
                 return
+
+            href = href.split("#", 2)[0]  # Strip URL fragment.
             if self.base_url:
                 href = requests.compat.urljoin(self.base_url, href)
 
