@@ -85,14 +85,16 @@ class CollectLinksParser(HTMLParser):
 
     def handle_data(self, data):
         if self._grab_link_text:
-            self._last_link_text.append(data.strip())
+            text = data.strip()
+            if text != "":
+                self._last_link_text.append(text)
 
     def handle_endtag(self, tag):
         if tag == "a":
             link_text = ""
             if self._grab_link_text:
                 self._grab_link_text = False
-                link_text = "".join(self._last_link_text)
+                link_text = " ".join(self._last_link_text)
             if self._last_link and self._last_link not in self._found_links:
                 self._found_links.add(self._last_link)
                 self.links.append((self._last_link, link_text))
