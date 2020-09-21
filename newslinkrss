@@ -355,7 +355,8 @@ def make_feed(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Forcibly generate RSS feeds from generic sites"
+        description="Forcibly generate RSS feeds from generic sites",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     parser.add_argument(
@@ -381,7 +382,11 @@ def main():
         "--link-pattern",
         action="store",
         default=".+",
-        help="A regex to filter the URLs of links that the script will follow.",
+        metavar="REGEX",
+        help=(
+            "A regular expression to filter the URLs of links that the "
+            + "script will follow or capture to generate every feed item."
+        ),
     )
 
     parser.add_argument(
@@ -389,7 +394,10 @@ def main():
         "--title",
         action="store",
         default=None,
-        help="Use this alternate title for the feed.",
+        help=(
+            "Use this alternate title for the feed instead of the one "
+            + "discovered from the URL."
+        ),
     )
 
     parser.add_argument(
@@ -409,9 +417,10 @@ def main():
         action="store_true",
         default=False,
         help=(
-            "Follow every matching link to gather more information. It is "
-            + "slower and sends extra requests to the site, but allows higher "
-            + "quality feeds."
+            "Follow every link matching the pattern and download the page to "
+            + "gather more information. It is slower, sends extra requests to "
+            + "the site and transfers more data (sometimes a lot more!), but "
+            + "allows higher quality feeds."
         ),
     )
 
@@ -432,7 +441,12 @@ def main():
         "--user-agent",
         action="store",
         default=DEFAULT_USER_AGENT,
-        help="Use an alternate user agent. Default is '%s'" % DEFAULT_USER_AGENT,
+        help=(
+            "Set the user agent to identify ourselves to the site. Some sites "
+            + "can send different types of content according to it or just "
+            + "deny access do unknown UAs, so the best option is just "
+            + "impersonate a commonly used browser."
+        ),
     )
 
     parser.add_argument(
@@ -442,9 +456,10 @@ def main():
         type=int,
         help=(
             "Maximum amount of data to download from a single HTTP request, "
-            + "in kB. If this limit is exceeded, any remaining data will be "
-            + "discarded (very important when following links, because the "
-            + "page can led us into downloading a DVD ISO or something like)."
+            + "in kilobytes. If this limit is exceeded, any remaining data "
+            + "will be discarded. Very important when following links, "
+            + "because the page can led us into downloading a DVD ISO or "
+            + "something like."
         ),
     )
 
@@ -461,10 +476,16 @@ def main():
         "-o",
         "--output",
         action="store",
-        help="Output file (stdout if not given)",
+        metavar="FILENAME",
+        help=(
+            "Output file to save the feed. If not given, it will be written"
+            + " to stdout."
+        ),
     )
 
-    parser.add_argument("url", action="store", help="Base URL to start downloading")
+    parser.add_argument(
+        "url", action="store", help="URL of the website to generate the feed"
+    )
 
     args = parser.parse_args()
 
