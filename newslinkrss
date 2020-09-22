@@ -196,6 +196,20 @@ class CollectAttributesParser(HTMLParser):
             self._title_lst = None
 
 
+def try_date_from_url(url, args):
+    if not args.date_from_url:
+        return None
+    rdate = None
+    try:
+        m = re.match(args.date_from_url, url)
+        date_txt = m.group(1)
+        dt = datetime.datetime.strptime(date_txt, args.date_fmt)
+        rdate = datetime.datetime.combine(dt.date(), dt.time(), dateutil.tz.tzlocal())
+    except (IndexError, ValueError):
+        pass
+    return rdate
+
+
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     attr_parser = CollectAttributesParser()
@@ -244,15 +258,18 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     description += "Link text: %s" % link_text
     clean_title = clean_title[: args.max_title_length]
+    item_url = attr_parser.canonical or req.url
 
     # Try to get a meaningful last modification date.
     date = None
     if attr_parser.changed:
         date = attr_parser.changed
+    if not date:
+        date = try_date_from_url(item_url, args)
 
     return PyRSS2Gen.RSSItem(
         title=clean_title,
-        link=attr_parser.canonical or req.url,
+        link=item_url,
         description=description,
         guid=PyRSS2Gen.Guid(req.url),
         pubDate=date,
@@ -264,11 +281,13 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
         return None
     used_urls.add(url)
     clean_title = link_text[: args.max_title_length]
+    date = try_date_from_url(url, args)
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=url,
         description=link_text,
         guid=PyRSS2Gen.Guid(url),
+        pubDate=date,
     )
 
 
@@ -432,6 +451,48 @@ def main():
         help=(
             "Use this alternate title for the feed instead of the one "
             + "discovered from the URL."
+        ),
+    )
+
+    parser.add_argument(
+        "-A",
+        "--date-from-url",
+        action="store",
+        default=None,
+        metavar="REGEX",
+        help=(
+            "Interpret date and time od the feed item from the URL. This can "
+            "spare us from downloading the entire target page in some sites "
+            "and blogs that put a parseable date in its URL (e.g.: "
+            '"https://example.org/posts/2020/09/22/happy-hobbit-day/") or '
+            "be our only option if the website provides no date at all. The "
+            "argument is a regular expression containing a single capture "
+            "group that extracts the date (or date and time) from the URL. "
+            "For the previous example, this regex would be "
+            '"/posts/(\\d{4}/\\d{2}/\\d{2})/", which will return "2020/09/22"'
+            "to be interpreted as year/month/day. For other formats, see "
+            "option --date-fmt. The date/time will be used only as it returns "
+            "at least the year, month and day (this script will use hours "
+            "and minutes if they are available, but it is very rare for "
+            "sites to put this information in URLs). "
+            "When using --follow, the date detected from this option will "
+            "only be used if the page provides no date of its own. "
+            "KNOWN BUG: Currently the code assumes that the date is in the "
+            "same timezone as the system running this script."
+        ),
+    )
+
+    parser.add_argument(
+        "--date-fmt",
+        action="store",
+        default="%Y/%m/%d",
+        metavar="DATE FORMAT",
+        help=(
+            "The date format to be used with option --date-from-url. This "
+            "value is a format string as specified by strftime(), and *must* "
+            "contain at least the formats for year, month and date. This "
+            "script can use hours and minutes if they are available, but "
+            "it is very rare for sites to put this information in URLs."
         ),
     )
 
