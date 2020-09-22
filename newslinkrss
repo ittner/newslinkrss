@@ -304,13 +304,14 @@ def make_exception_feed(exc, args=None):
         description=msg,
     )
 
-    return PyRSS2Gen.RSS2(
+    rss = PyRSS2Gen.RSS2(
         title="Error: " + cmdline,
         link=args.url if args else None,
         description="Failed to generate feed.",
         lastBuildDate=datetime.datetime.now(),
         items=[itm],
     )
+    write_feed(rss, args)
 
 
 def make_feed(args):
@@ -374,7 +375,7 @@ def make_feed(args):
     title = base_attrs.title or base_url
     title = title[: args.max_title_length]
 
-    return PyRSS2Gen.RSS2(
+    rss = PyRSS2Gen.RSS2(
         title=args.title or title,
         link=base_url,
         description=base_attrs.description
@@ -384,6 +385,7 @@ def make_feed(args):
         lastBuildDate=datetime.datetime.now(),
         items=rss_items,
     )
+    write_feed(rss, args)
 
 
 def main():
@@ -545,12 +547,12 @@ def main():
         return 1
 
     try:
-        write_feed(make_feed(args), args)
+        make_feed(args)
     except Exception as exc:
         if args.no_exception_feed:
             raise exc
         else:
-            write_feed(make_exception_feed(exc, args), args)
+            make_exception_feed(exc, args)
         return 1
     return 0
 
