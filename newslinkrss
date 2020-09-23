@@ -196,14 +196,12 @@ class CollectAttributesParser(HTMLParser):
             self._title_lst = None
 
 
-def try_date_from_url(url, args):
-    if not args.date_from_url:
-        return None
+def try_date_from_str(src, date_rx, date_fmt):
     rdate = None
     try:
-        m = re.match(args.date_from_url, url)
+        m = re.match(date_rx, src)
         date_txt = m.group(1)
-        dt = datetime.datetime.strptime(date_txt, args.date_fmt)
+        dt = datetime.datetime.strptime(date_txt, date_fmt)
         rdate = datetime.datetime.combine(dt.date(), dt.time(), dateutil.tz.tzlocal())
     except (IndexError, ValueError):
         pass
@@ -264,8 +262,10 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     date = None
     if attr_parser.changed:
         date = attr_parser.changed
-    if not date:
-        date = try_date_from_url(item_url, args)
+    if not date and args.date_from_text:
+        date = try_date_from_str(clean_title, args.date_from_text, args.text_date_fmt)
+    if not date and args.date_from_url:
+        date = try_date_from_str(item_url, args.date_from_url, args.url_date_fmt)
 
     return PyRSS2Gen.RSSItem(
         title=clean_title,
@@ -281,7 +281,12 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
         return None
     used_urls.add(url)
     clean_title = link_text[: args.max_title_length]
-    date = try_date_from_url(url, args)
+    date = None
+    if args.date_from_text:
+        date = try_date_from_str(link_text, args.date_from_text, args.text_date_fmt)
+    if not date and args.date_from_url:
+        date = try_date_from_str(url, args.date_from_url, args.url_date_fmt)
+
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=url,
@@ -471,10 +476,10 @@ def main():
             "For the previous example, this regex would be "
             '"/posts/(\\d{4}/\\d{2}/\\d{2})/", which will return "2020/09/22"'
             "to be interpreted as year/month/day. For other formats, see "
-            "option --date-fmt. The date/time will be used only as it returns "
-            "at least the year, month and day (this script will use hours "
-            "and minutes if they are available, but it is very rare for "
-            "sites to put this information in URLs). "
+            "option --url-date-fmt. The date/time will be used only as it "
+            "returns at least the year, month and day (this script will use "
+            "hours and minutes if they are available, but it is very rare "
+            "for sites to put this information in URLs). "
             "When using --follow, the date detected from this option will "
             "only be used if the page provides no date of its own. "
             "KNOWN BUG: Currently the code assumes that the date is in the "
@@ -483,7 +488,7 @@ def main():
     )
 
     parser.add_argument(
-        "--date-fmt",
+        "--url-date-fmt",
         action="store",
         default="%Y/%m/%d",
         metavar="DATE FORMAT",
@@ -493,6 +498,43 @@ def main():
             "contain at least the formats for year, month and date. This "
             "script can use hours and minutes if they are available, but "
             "it is very rare for sites to put this information in URLs."
+        ),
+    )
+
+    parser.add_argument(
+        "-a",
+        "--date-from-text",
+        action="store",
+        default=None,
+        metavar="REGEX",
+        help=(
+            "Interpret date and time of the feed item from the link text. "
+            "This can spare us from downloading the entire target page in "
+            "some sites and blogs that put a parseable its links or be our "
+            "only option if the website provides no date at all. The argument "
+            "is a regular expression containing a single capture group that "
+            "extracts the date (or date and time) from the text, and the "
+            "resulting capture will be interpreted according to the format "
+            "given in option --text-date-fmt (unlike --url-date-fmt, there "
+            "is no commonly used format, so the default will probably not "
+            "work for you). The date/time will be used only as it returns at "
+            "least the year, month and day. "
+            "When using --follow, the date detected from this option will "
+            "only be used if the page provides no date of its own. "
+            "KNOWN BUG: Currently the code assumes that the date is in the "
+            "same timezone as the system running this script."
+        ),
+    )
+
+    parser.add_argument(
+        "--text-date-fmt",
+        action="store",
+        default="%Y/%m/%d %H:%M",
+        metavar="DATE_FORMAT",
+        help=(
+            "The date format to be used with option --text-from-url. This "
+            "value is a format string as specified by strftime(), and *must* "
+            "contain at least the formats for year, month and date."
         ),
     )
 
