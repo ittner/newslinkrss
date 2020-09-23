@@ -200,10 +200,12 @@ def try_date_from_str(src, date_rx, date_fmt):
     rdate = None
     try:
         m = re.match(date_rx, src)
+        if not m:
+            return None
         date_txt = m.group(1)
         dt = datetime.datetime.strptime(date_txt, date_fmt)
         rdate = datetime.datetime.combine(dt.date(), dt.time(), dateutil.tz.tzlocal())
-    except (IndexError, ValueError):
+    except (AttributeError, IndexError, ValueError):
         pass
     return rdate
 
