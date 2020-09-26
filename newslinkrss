@@ -343,6 +343,25 @@ def make_exception_feed(exc, args=None):
     write_feed(rss, args)
 
 
+def test_links(link_grabber, args):
+    args.no_exception_feed = True
+    if link_grabber.limit_reached:
+        print("# Limit of %d links was reached." % (link_grabber.max_items))
+    for itm in link_grabber.links:
+        print("- " + itm[0])
+        if itm[1] and itm[1] != "":
+            print("    text: " + itm[1])
+        if args.date_from_url:
+            date = try_date_from_str(itm[0], args.date_from_url, args.url_date_fmt)
+            if date:
+                print("    url-date:  " + str(date))
+        if itm[1] and args.date_from_text:
+            date = try_date_from_str(itm[1], args.date_from_text, args.text_date_fmt)
+            if date:
+                print("    text-date: " + str(date))
+        print("")
+
+
 def make_feed(args):
 
     base_url = args.url
@@ -378,11 +397,8 @@ def make_feed(args):
     link_grabber.feed(page_content)
     base_links = link_grabber.links
 
-    if args.debug_links:
-        if link_grabber.limit_reached:
-            print("# Limit of %d links was reached." % (link_grabber.max_items))
-        for itm in link_grabber.links:
-            print(itm[0])
+    if args.test:
+        test_links(link_grabber, args)
         return
 
     # URLs that where already processed (considering redirects).
@@ -544,13 +560,13 @@ def main():
     )
 
     parser.add_argument(
-        "--debug-links",
+        "--test",
         action="store_true",
         default=False,
         help=(
-            "Do not generate the feed, but just print to stdout the links "
-            + "that were discovered and would be included or followed when "
-            + "generating. Useful for debugging link patterns."
+            "Do not generate the feed, but just print to stdout the "
+            "information that was discovered and would be used to generate "
+            "the feed. Useful for debugging link and date patterns."
         ),
     )
 
