@@ -231,7 +231,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
             description += "Page returned status code %d<br/>" % req.status_code
     except (
         urllib3.exceptions.ReadTimeoutError,
-        requests.exceptions.ReadTimeout,
+        requests.exceptions.Timeout,
     ):
         # We should handle this somehow.
         return None
