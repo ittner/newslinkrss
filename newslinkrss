@@ -18,18 +18,17 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-import requests
-from html.parser import HTMLParser
 import sys
 import re
-import logging
-import PyRSS2Gen
 import datetime
-import dateutil.parser
 import argparse
-import urllib3
 import traceback
+from html.parser import HTMLParser
+import urllib3
+
+import dateutil.parser
+import PyRSS2Gen
+import requests
 
 
 DEFAULT_USER_AGENT = (
@@ -62,7 +61,7 @@ class CollectLinksParser(HTMLParser):
         self._last_link = None
 
     def handle_starttag(self, tag, attrs):
-        if (self.max_items != None) and (len(self.links) >= self.max_items):
+        if (self.max_items is not None) and (len(self.links) >= self.max_items):
             self.limit_reached = True
             return
 
@@ -134,7 +133,6 @@ class CollectAttributesParser(HTMLParser):
 
         if self._in_head and (tag == "title") and (not self.title):
             self._title_lst = []
-            self._title = None
 
         if self._in_head and tag == "link":
             # <link rel="xxxx" href="yyyy" />
@@ -184,14 +182,14 @@ class CollectAttributesParser(HTMLParser):
                     self.description = content
 
     def handle_data(self, data):
-        if self._title_lst != None:
+        if self._title_lst is not None:
             self._title_lst.append(data.strip())
 
     def handle_endtag(self, tag):
         if tag == "head":
             self._in_head = False
 
-        if tag == "title" and self._title_lst != None:
+        if tag == "title" and self._title_lst is not None:
             self.title = "".join(self._title_lst)
             self._title_lst = None
 
@@ -234,7 +232,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     except (
         urllib3.exceptions.ReadTimeoutError,
         requests.exceptions.ReadTimeout,
-    ) as exc:
+    ):
         # We should handle this somehow.
         return None
     finally:
@@ -667,8 +665,7 @@ def main():
     except Exception as exc:
         if args.no_exception_feed:
             raise exc
-        else:
-            make_exception_feed(exc, args)
+        make_exception_feed(exc, args)
         return 1
     return 0
 
