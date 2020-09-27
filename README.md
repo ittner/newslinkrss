@@ -1,13 +1,131 @@
 # About
 
-newslinkrss generates RSS feeds from generic sites that do not provide
-their own. This is done by loading a given URL and collecting all links
-that matches a pattern (given as a regular expression) to gather relevant
-information
+newslinkrss generates RSS feeds from generic sites that do not provide their
+own. This is done by loading a given URL and collecting all links that
+matches a pattern (given as a regular expression) to gather the relevant
+information.
 
-The results are output as a RSS feed to stdout or, optionally, a file.
+The results are printed as a RSS feed to stdout or, optionally, to a file. The
+best usage approach is just to configure your **local** feed reader, like
+[Liferea](https://lzone.de/liferea/) or [Newsboat](https://newsboat.org/), to
+use a "command" source and pass the correct command line arguments to generate
+a suitable feed -- this allows you to centralize the configuration in the
+reader itself and let it handle update times, etc.
 
-Run `./newslinkrss --help` for the complete command line details.
+Run `newslinkrss --help` for the complete list of command line options.
+
+
+# Intended audience (and a rant)
+
+This script is mostly intended to technically versed people using some kind
+of Unix operating system (e.g. Linux). I was planning to write some detailed
+documentation but gave I just up. There is no much hope of making it friendly
+to casual users when every use case requires complex command lines, abuse of
+regular expressions, timefmt strings, etc.
+
+Everything would be just easier if websites simply provided clean and
+complete RSS or Atom feeds, but these are becoming rarer every day. Most sites
+just assume we want to follow them through social media (and that we *use*
+social media!) while giving away privacy and submitting ourselves to tracking
+and personal data collection in exchange for timelines algorithmically
+optimized to improve "engagement" with advertisers.
+
+I'm still resisting and wrote lots of feed scrapers/filters in the last 10
+or so years; newslinkrss is one that replaced several of these ad-hoc filters
+by centralizing some very common pieces of code and is polished enough to be
+published.
+
+
+
+
+# Installation
+
+Just clone the Git repository and install or update the program with
+
+    pip install -U .
+
+You may want to do this in a virtual environment so it won't interfere with
+other user-level or system-wide components.
+
+
+
+
+# Usage examples
+
+To generate a feed from site https://www.jaraguadosul.sc.gov.br/noticias.php ,
+collecting all links with the substring `/news/` in the URL, use:
+
+    newslinkrss -p '.+/news/.+' https://www.jaraguadosul.sc.gov.br/noticias.php
+
+And a more complex example where it is necessary to follow the target of
+candidate links and stitch information from several sources (URL, link text
+and destination contents). Assume we want to generate a feed from
+https://revistaquestaodeciencia.com.br/ , which provides no facilities for it.
+Looking into the site we find that:
+
+- URLs for news articles have a date on them (in format `YYYY/MM/DD`), so it
+  is possible to use this in the URL pattern (option `-p`) to limit which
+  links the script will look for. Some are prefixed by a section stub and all
+  are followed by a string generated from the title, so the regex must accept
+  the date anywhere in it. Anything could be a filter here, but as all
+  articles have a date on it we don't need to look anywhere else;
+
+- There is no standard, not even de-facto standard, representation for the
+  date an article was published, so the alternative is taking it from the URL
+  too. This is done with options `--date-from-url` (which requires regular
+  expression with a group capturing the substring that contains the date)
+  `--url-date-fmt` (which defines the format of the date);
+
+- Inconsistencies in the link formats prevent us from getting all articles
+  titles from the links in the front page, so the alternative is to
+  `--follow` every candidate link, downloading the target page and looking to
+  the title there. This must be done **very carefully**: we don't want to
+  abuse the website or get stuck downloading gigabytes of data, so we limit
+  the processing to the first 50 links matching the regex (with option
+  `--max-links`), only load the first 64 kB of data from the every followed
+  link (option `--max-page-length`), and stop processing a page after 2s
+  (option `--http-timeout`).
+
+The resulting command line is:
+
+    newslinkrss -p '.+/\d{4}/\d{2}/\d{2}/.+' \
+        --date-from-url '.*/(\d{4}/\d{2}/\d{2})/.*' \
+        --url-date-fmt '%Y/%m/%d' \
+        --follow \
+        --max-links 50 \
+        --max-page-length 64 \
+        --http-timeout 2 \
+        'https://revistaquestaodeciencia.com.br/'
+
+To make understanding easier, this example uses the long, verbose, form of
+some options even when abbreviations are available. For the same reason, some
+of the options are set to the default values and are not strictly required
+but they are listed anyway. See `newslinkrss --help` for details.
+
+### Caveats
+
+Be very careful with escape characters! For the shell, it is recommended to
+use single quotes for regexes, so "\\" is not escaped. This is more
+confusing if your feed reader also use escape sequences but with different
+or conflicting rules (e.g. Newsboat uses "\\" as escapes but does not follow
+the same rules used by bash). When in doubt, run the command in the shell or
+use a wrapper script to test for any unusual behavior introduced by the
+program.
+
+Some feed readers run commands in a synchronous (blocking) mode and their
+interface will get stuck until the command terminates. Liferea has this
+behavior and it's a bit of a problem as newslinkrss can take a while to
+load some sources. A typical workaround is to create a script with all calls
+to newslinkrss that saves the generated feeds to files (see option `-o`),
+schedule this script to run from cron and configure Liferea to load the
+feed from the files. This solves the frozen interface problem, but requires
+configuring feeds in two different places.
+
+
+
+# Bugs
+
+Yes :-)
 
 
 
@@ -34,8 +152,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 # Contact information
 
-Author: Alexandre Erwin Ittner
+- Author: Alexandre Erwin Ittner
+- Email: <alexandre@ittner.com.br>
+- Web: <https://www.ittner.com.br>
 
-Email: <alexandre@ittner.com.br>
 
-Web: <https://www.ittner.com.br>
