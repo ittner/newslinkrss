@@ -61,6 +61,9 @@ collecting all links with the substring `/news/` in the URL, use:
 
     newslinkrss -p '.+/news/.+' https://www.jaraguadosul.sc.gov.br/noticias.php
 
+
+### Following pages and generating complete feeds
+
 And a more complex example where it is necessary to follow the target of
 candidate links and stitch information from several sources (URL, link text
 and destination contents) together. Assume we want to generate a feed from
@@ -115,6 +118,49 @@ To make understanding easier, this example uses the long, verbose, form of
 some options even when abbreviations are available. For the same reason, some
 of the options are set to the default values and are not strictly required
 but they are listed anyway. See `newslinkrss --help` for details.
+
+
+### Using XPath expressions
+
+Sometimes we need to fight really hard to get the date that a particular item
+was last updated. Taking GitHub issues as an example: while GH provides Atom
+feeds for releases and commits (but always to specific branches), there is
+none for issues and pull requests. Of course, there is a API for that but it
+requires authentication with a GitHub account, enables tracking, and required
+writing an specific bridge to get the data as a feed. This makes the scraping
+approach easier even with the very convoluted example that follows.
+
+The URLs for issues and PRs are pretty usable, we can already use them to
+limit how many issues will be shown, their status, filter by date, etc. Just
+look at the example.
+
+However, we need to get the date of the last comment on the issue and set it
+as the publishing date of the feed, otherwise the reader won't show us that
+it was updated. A solution for that is following every page and using a
+XPath expression to find the last occurrence of a "relative-time" tag that
+GitHub uses to mark the timestamp of a comment and parse its date from
+attribute "datetime". This is done with options `--date-from-xpath` and
+`--xpath-date-fmt`.
+
+The resulting command line is the following but, again, the only extended
+documentation is the one available in `--help`.
+
+    newslinkrss \
+        --follow \
+        --with-body \
+        --http-timeout 5 \
+        --max-links 30 \
+        --max-page-length 1024 \
+        -p '^https://github.com/.+/issues/\d+$' \
+        --date-from-xpath '(//h3/a/relative-time)[last()]/@datetime' \
+        --xpath-date-fmt '%Y-%m-%dT%H:%M:%SZ' \
+        'https://github.com/lwindolf/liferea/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc'
+
+Debugging XPath expressions is not a very easy task, best way is just open
+the target page in Firefox, launch web developer tools and use the $x() helper
+function to get what the expression will return, for example:
+`$x('(//h3/a/relative-time)[last()]/@datetime')`.
+
 
 ### Caveats
 
