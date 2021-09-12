@@ -30,6 +30,15 @@ import dateutil.parser
 import PyRSS2Gen
 import requests
 
+HAVE_LXML = False
+try:
+    import lxml.html
+    import lxml.etree
+
+    HAVE_LXML = True
+except ModuleNotFoundError:
+    pass
+
 
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64; rv:80.0) Gecko/20100101 Firefox/80.0"
@@ -213,6 +222,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     attr_parser = CollectAttributesParser()
     description = ""
     req = None
+    page_text = ""
     try:
         req = session.get(url, timeout=args.http_timeout, stream=True)
         if req.url in used_urls:
@@ -227,6 +237,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                     break
                 consumed_size += len(chunk)
                 attr_parser.feed(chunk)
+                page_text += chunk
         else:
             description += "Page returned status code %d<br/>" % req.status_code
     except (
@@ -262,6 +273,15 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         date = try_date_from_str(clean_title, args.date_from_text, args.text_date_fmt)
     if not date and args.date_from_url:
         date = try_date_from_str(item_url, args.date_from_url, args.url_date_fmt)
+    if not date and args.date_from_xpath:
+        try:
+            tree = lxml.html.document_fromstring(page_text)
+            for res in tree.xpath(args.date_from_xpath):
+                date = try_date_from_str(res, args.xpath_regex, args.xpath_date_fmt)
+                if date:
+                    break
+        except lxml.etree.XPathEvalError:
+            pass
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
@@ -556,6 +576,73 @@ def main():
             "contain at least the formats for year, month and date."
         ),
     )
+
+    if HAVE_LXML:
+        parser.add_argument(
+            "--date-from-xpath",
+            action="store",
+            default=None,
+            metavar="XPATH_EXPRESSION",
+            help=(
+                "Use a XPath expression to get the text containing the date "
+                "and time the page was published. This allows picking the "
+                "date from any element present in the page, but at the cost "
+                "of some complexity and *requires* downloading the candidate "
+                "pages by passing option --follow (--max-page-length can "
+                "also be used to limit the amount of downloaded data, but "
+                "if the required element is not in it, the date won't be "
+                "available). "
+                "Notice that options --date-from-xpath, --xpath-regex, and "
+                "--xpath-date-fmt work together as a pipeline, first getting "
+                "the text from elements in the page, then optionally "
+                "selecting a substring from it, and then parsing it as date "
+                "and time. "
+                "Example: the XPath expression '//span[@class=\"published-date\"]/@datetime' "
+                'will pick the date from attribute "datetime" from the first '
+                '"span" tag that has an attribute named "class" with value '
+                'equal to "published-date".'
+            ),
+        )
+
+        parser.add_argument(
+            "--xpath-regex",
+            action="store",
+            default="(.+)",
+            metavar="REGEX",
+            help=(
+                "A regular expression containing a single group that is used "
+                "to select the part of the text returned by --date-from-xpath, "
+                "that will then be parsed as a date using the format given "
+                "by option --xpath-date-fmt. This option may be useful when "
+                "the XPath expression required to select the exact text just "
+                "becomes too complicated or verbose and doing it in two steps "
+                "just becomes easier. This option can be safely omitted if "
+                "this step is not necessary, as the default regex select the "
+                "complete input. "
+                "Notice that options --date-from-xpath, --xpath-regex, and "
+                "--xpath-date-fmt work together as a pipeline, first getting "
+                "the text from elements in the page, then optionally "
+                "selecting a substring from it, and then parsing it as date "
+                "and time."
+            ),
+        )
+
+        parser.add_argument(
+            "--xpath-date-fmt",
+            action="store",
+            default="%Y-%m-%d %H:%M:%S",
+            metavar="DATE_FORMAT",
+            help=(
+                "The date format to be used with option --date-from-xpath. "
+                "This value is a format string as specified by strftime(), and "
+                "*must* contain at least the formats for year, month and date. "
+                "Notice that options --date-from-xpath, --xpath-regex, and "
+                "--xpath-date-fmt work together as a pipeline, first getting "
+                "the text from elements in the page, then optionally "
+                "selecting a substring from it, and then parsing it as date "
+                "and time. "
+            ),
+        )
 
     parser.add_argument(
         "--test",
