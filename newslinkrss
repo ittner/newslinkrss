@@ -293,7 +293,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     if HAVE_LXML and args.with_body:
         try:
-            if not tree:
+            if tree is None:
                 # Evil premature optimization: perhaps we already parsed the
                 # document looking for dates.
                 tree = lxml.html.document_fromstring(page_text)
