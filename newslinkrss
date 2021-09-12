@@ -277,7 +277,9 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         try:
             tree = lxml.html.document_fromstring(page_text)
             for res in tree.xpath(args.date_from_xpath):
-                date = try_date_from_str(res, args.xpath_date_regex, args.xpath_date_fmt)
+                date = try_date_from_str(
+                    res, args.xpath_date_regex, args.xpath_date_fmt
+                )
                 if date:
                     break
         except (lxml.etree.XPathEvalError, lxml.etree.ParserError):
