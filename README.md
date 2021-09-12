@@ -47,6 +47,10 @@ Just clone the Git repository and install or update the program with
 You may want to do this in a virtual environment so it won't interfere with
 other user-level or system-wide components.
 
+newslinkrss depends on a few libraries and has one technically optional
+dependency on [lxml](https://lxml.de/), but the setup script will always
+install it anyway -- it is possible to run the script without installing it,
+but a few nice features will be unavailable (XPath, `--with-body`, etc.).
 
 
 
@@ -59,7 +63,7 @@ collecting all links with the substring `/news/` in the URL, use:
 
 And a more complex example where it is necessary to follow the target of
 candidate links and stitch information from several sources (URL, link text
-and destination contents). Assume we want to generate a feed from
+and destination contents) together. Assume we want to generate a feed from
 https://revistaquestaodeciencia.com.br/ , which provides no facilities for it.
 Looking into the site we find that:
 
@@ -86,12 +90,22 @@ Looking into the site we find that:
   link (option `--max-page-length`), and stop processing a page after 2s
   (option `--http-timeout`).
 
+- As we are already following and downloading the links, there is no much
+  extra cost in generating a full feed, i.e., one that includes the full
+  text of the page. Option `--with-body` will copy the entire contents of
+  the "body" element from the page into the feed, just removing a few
+  obviously unwanted tags (scripts, forms, etc.). Using this option requires
+  a careful usage of options `--max-links` and `--max-page-length` to limit
+  the amount of data we download, as it is pretty easy to generate some huge
+  feeds.
+
 The resulting command line is:
 
     newslinkrss -p '.+/\d{4}/\d{2}/\d{2}/.+' \
         --date-from-url '.*/(\d{4}/\d{2}/\d{2})/.*' \
         --url-date-fmt '%Y/%m/%d' \
         --follow \
+        --with-body \
         --max-links 50 \
         --max-page-length 64 \
         --http-timeout 2 \
