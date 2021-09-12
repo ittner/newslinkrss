@@ -307,6 +307,9 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         except (lxml.etree.ParserError):
             pass
 
+    if date:
+        # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
+        date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=item_url,
@@ -330,6 +333,9 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
     if args.require_dates and not date:
         return None
 
+    if date:
+        # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
+        date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=url,
@@ -375,7 +381,8 @@ def make_exception_feed(exc, args=None):
         title="Error: " + cmdline,
         link=args.url if args else None,
         description="Failed to generate feed.",
-        lastBuildDate=datetime.datetime.now(),
+        # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
+        lastBuildDate=datetime.datetime.now(datetime.timezone.utc),
         items=[itm],
     )
     write_feed(rss, args)
@@ -465,7 +472,8 @@ def make_feed(args):
         or base_attrs.title
         or base_attrs.canonical
         or base_url,
-        lastBuildDate=datetime.datetime.now(),
+        # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
+        lastBuildDate=datetime.datetime.now(datetime.timezone.utc),
         items=rss_items,
     )
     write_feed(rss, args)
