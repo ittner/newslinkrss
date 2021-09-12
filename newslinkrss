@@ -277,7 +277,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         try:
             tree = lxml.html.document_fromstring(page_text)
             for res in tree.xpath(args.date_from_xpath):
-                date = try_date_from_str(res, args.xpath_regex, args.xpath_date_fmt)
+                date = try_date_from_str(res, args.xpath_date_regex, args.xpath_date_fmt)
                 if date:
                     break
         except lxml.etree.XPathEvalError:
@@ -592,9 +592,9 @@ def main():
                 "also be used to limit the amount of downloaded data, but "
                 "if the required element is not in it, the date won't be "
                 "available). "
-                "Notice that options --date-from-xpath, --xpath-regex, and "
-                "--xpath-date-fmt work together as a pipeline, first getting "
-                "the text from elements in the page, then optionally "
+                "Notice that options --date-from-xpath, --xpath-date-regex, "
+                "and --xpath-date-fmt work together as a pipeline, first "
+                "getting the text from elements in the page, then optionally "
                 "selecting a substring from it, and then parsing it as date "
                 "and time. "
                 "Example: the XPath expression '//span[@class=\"published-date\"]/@datetime' "
@@ -605,7 +605,7 @@ def main():
         )
 
         parser.add_argument(
-            "--xpath-regex",
+            "--xpath-date-regex",
             action="store",
             default="(.+)",
             metavar="REGEX",
@@ -619,11 +619,11 @@ def main():
                 "just becomes easier. This option can be safely omitted if "
                 "this step is not necessary, as the default regex select the "
                 "complete input. "
-                "Notice that options --date-from-xpath, --xpath-regex, and "
-                "--xpath-date-fmt work together as a pipeline, first getting "
-                "the text from elements in the page, then optionally "
+                "Notice that options --date-from-xpath, --xpath-date-regex, "
+                "and --xpath-date-fmt work together as a pipeline, first "
+                "getting the text from elements in the page, then optionally "
                 "selecting a substring from it, and then parsing it as date "
-                "and time."
+                "and time. "
             ),
         )
 
@@ -636,9 +636,9 @@ def main():
                 "The date format to be used with option --date-from-xpath. "
                 "This value is a format string as specified by strftime(), and "
                 "*must* contain at least the formats for year, month and date. "
-                "Notice that options --date-from-xpath, --xpath-regex, and "
-                "--xpath-date-fmt work together as a pipeline, first getting "
-                "the text from elements in the page, then optionally "
+                "Notice that options --date-from-xpath, --xpath-date-regex, "
+                "and --xpath-date-fmt work together as a pipeline, first "
+                "getting the text from elements in the page, then optionally "
                 "selecting a substring from it, and then parsing it as date "
                 "and time. "
             ),
