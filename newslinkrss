@@ -394,7 +394,7 @@ def make_feed(args):
         req = session.get(base_url, timeout=args.http_timeout, stream=True)
         consumed_size = 0
         for chunk in req.iter_content(chunk_size=100 * 1024, decode_unicode=True):
-            if consumed_size >= 1024 * args.max_page_length:
+            if consumed_size >= 1024 * args.max_first_page_length:
                 break
             consumed_size += len(chunk)
             page_content += chunk
@@ -698,11 +698,31 @@ def main():
         default=2048,
         type=int,
         help=(
-            "Maximum amount of data to download from a single HTTP request, "
-            "in kilobytes. If this limit is exceeded, any remaining data "
-            "will be discarded. Very important when following links, "
-            "because the page can led us into downloading a DVD ISO or "
-            "something like."
+            "Maximum amount of data, in kilobytes, to download from a single "
+            "HTTP request for the pages followed when using option --follow. "
+            "If this limit is exceeded, any remaining data will be discarded. "
+            "Very important when following links because any of them can led "
+            "us into downloading a DVD ISO or something like. This option "
+            'does not applies to the "first" page, i.e. the one which URL '
+            "is given in command line and it is used as starting point for "
+            "the entire process; for this limit, use option "
+            "--max-first-page-length"
+        ),
+    )
+
+    parser.add_argument(
+        "--max-first-page-length",
+        action="store",
+        default=2048,
+        type=int,
+        help=(
+            "Maximum amount of data, in kilobytes, to download from the "
+            "first page, i.e. the one which URL is given in command line to "
+            "start the process. This is important because the server can "
+            "generate and infinite amount of data, redirect us to a "
+            "DVD ISO or anything else. For limiting the pages downloaded "
+            "when following links (option --follow), see option "
+            "--max-page-length"
         ),
     )
 
