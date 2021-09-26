@@ -235,11 +235,12 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         if req.url in used_urls:
             return None
         used_urls.add(req.url)
+        chunk_size = 1024 * min(100, args.max_page_length)
         if req.status_code == 200:
             if attr_parser.description:
                 description = attr_parser.description
             consumed_size = 0
-            for chunk in req.iter_content(chunk_size=100 * 1024, decode_unicode=True):
+            for chunk in req.iter_content(chunk_size=chunk_size, decode_unicode=True):
                 if consumed_size >= 1024 * args.max_page_length:
                     break
                 consumed_size += len(chunk)
@@ -424,8 +425,9 @@ def make_feed(args):
     req = None
     try:
         req = session.get(base_url, timeout=args.http_timeout, stream=True)
+        chunk_size = 1024 * min(100, args.max_first_page_length)
         consumed_size = 0
-        for chunk in req.iter_content(chunk_size=100 * 1024, decode_unicode=True):
+        for chunk in req.iter_content(chunk_size=chunk_size, decode_unicode=True):
             if consumed_size >= 1024 * args.max_first_page_length:
                 break
             consumed_size += len(chunk)
