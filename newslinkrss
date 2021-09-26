@@ -166,8 +166,10 @@ class CollectAttributesParser(HTMLParser):
             if (
                 prop == "article:published_time"
                 or prop == "article:modified_time"
+                or prop == "og:updated_time"
                 or name == "article:published_time"
                 or name == "article:modified_time"
+                or name == "og:updated_time"
             ):
                 # Content is a date in ISO format.
                 # <meta property="article:published_time" content="2020-09-13T20:00:00+00:00" />
