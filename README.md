@@ -21,7 +21,7 @@ This script is mostly intended to technically versed people using some kind
 of Unix operating system (e.g. Linux). I was planning to write some detailed
 documentation but gave I just up. There is no much hope of making it friendly
 to casual users when every use case requires complex command lines, abuse of
-regular expressions, timefmt strings, etc.
+regular expressions, timefmt strings, XPath, etc.
 
 Everything would be just easier if websites simply provided clean and
 complete RSS or Atom feeds, but these are becoming rarer every day. Most sites
@@ -127,7 +127,7 @@ was last updated. Taking GitHub issues as an example: while GH provides Atom
 feeds for releases and commits (but always to specific branches), there is
 none for issues and pull requests. Of course, there is a API for that but it
 requires authentication with a GitHub account, enables tracking, and required
-writing an specific bridge to get the data as a feed. This makes the scraping
+writing a specific bridge to get the data as a feed. This makes the scraping
 approach easier even with the very convoluted example that follows.
 
 The URLs for issues and PRs are pretty usable, we can already use them to
@@ -173,10 +173,10 @@ use a wrapper script to test for any unusual behavior introduced by the
 program.
 
 Some feed readers run commands in a synchronous (blocking) mode and their
-interface will get stuck until the command terminates. Liferea has this
-behavior and it's a bit of a problem as newslinkrss can take a while to
-load some sources. A typical workaround is to create a script with all calls
-to newslinkrss that saves the generated feeds to files (see option `-o`),
+interface will get stuck until the command terminates. Liferea had this
+behavior [until version 1.13.7](https://github.com/lwindolf/liferea/commit/b03af3b0f6a4e42b17dfa49782faa6c044055738),
+for example. A typical workaround is to create a script with all calls to
+newslinkrss that saves the generated feeds to files (see option `-o`),
 schedule this script to run from cron and configure Liferea to load the
 feed from the files. This solves the frozen interface problem, but requires
 configuring feeds in two different places.
