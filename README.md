@@ -40,12 +40,36 @@ published.
 
 # Installation
 
-Just clone the Git repository and install or update the program with
+
+## Installing from PyPI
+
+This is the simplest installation method and will deliver the latest **stable**
+version of the program. To install the current stable version in your `$HOME`
+directory, just type:
+
+    pip3 install newslinkrss
+
+This assumes pip3 is installed and configured (which usually happens by
+default in Linux distributions intended for general use).
+
+
+
+## Installing from the Git repository
+
+This installation process is recommended for developers and people wanting
+the newest version. For that, just clone the Git repository and install or
+update the program with:
 
     pip install -U .
 
 You may want to do this in a virtual environment so it won't interfere with
-other user-level or system-wide components.
+other user-level or system-wide components and will make experimentation
+with development versions easier. In this case, just do:
+
+    python3 -m venv my-venv
+    . my-venv/bin/activate
+    pip install -U .
+
 
 newslinkrss depends on a few libraries and has one technically optional
 dependency on [lxml](https://lxml.de/), but the setup script will always
@@ -189,6 +213,25 @@ Yes :-)
 
 
 
+## Contributing
+
+For this project I started an experiment: I'm using [sourcehut](https://sr.ht/)
+for the code repository and other management tools, instead of the usual Github
+or Gitlab. That's the old-school way of doing things and most features just
+work without an user account. Check the [project page](https://sr.ht/~ittner/newslinkrss/)
+there to see how it works.
+
+If this sounds too strange, just clone the repository with an
+`git clone https://git.sr.ht/~ittner/newslinkrss`, publish your fork somewhere
+and send an email with the branches to be merged to `~ittner/newslinkrss@lists.sr.ht`
+(that's correct. Tildes and slashes are valid for email addresses)
+
+If you change the code, please run in through pyflakes for static analysis and
+[black](https://pypi.org/project/black/) to ensure a consistent formatting.
+
+
+
+
 # License
 
 Copyright (C) 2020  Alexandre Erwin Ittner <alexandre@ittner.com.br>
@@ -205,7 +248,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 
 
 
