@@ -213,7 +213,7 @@ Yes :-)
 
 
 
-## Contributing
+# Contributing
 
 For this project I started an experiment: I'm using [sourcehut](https://sr.ht/)
 for the code repository and other management tools, instead of the usual Github
