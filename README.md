@@ -6,7 +6,7 @@ matches a pattern (given as a regular expression) to gather the relevant
 information.
 
 The results are printed as a RSS feed to stdout or, optionally, to a file. The
-best usage approach is just to configure your **local** feed reader, like
+simplest way to use it is just configure your **local** feed reader, like
 [Liferea](https://lzone.de/liferea/) or [Newsboat](https://newsboat.org/), to
 use a "command" source and pass the correct command line arguments to generate
 a suitable feed -- this allows you to centralize the configuration in the
@@ -18,21 +18,23 @@ Run `newslinkrss --help` for the complete list of command line options.
 # Intended audience (and a rant)
 
 This script is mostly intended to technically versed people using some kind
-of Unix operating system (e.g. Linux). I was planning to write some detailed
-documentation but gave I just up. There is no much hope of making it friendly
+of Unix operating system (e.g. Linux). I was planning to write a detailed
+documentation but I just gave up. There is no much hope of making it friendly
 to casual users when every use case requires complex command lines, abuse of
 regular expressions, timefmt strings, XPath, etc.
 
-Everything would be just easier if websites simply provided clean and
-complete RSS or Atom feeds, but these are becoming rarer every day. Most sites
+## The Rant
+
+Everything would be just easier if websites simply provided clean and complete
+RSS or Atom feeds, but these sites are becoming rarer every day. Most sites
 just assume we want to follow them through social media (and that we *use*
 social media!) while giving away privacy and submitting ourselves to tracking
 and personal data collection in exchange for timelines algorithmically
 optimized to improve "engagement" with advertisers.
 
-I'm still resisting and wrote lots of feed scrapers/filters in the last 10
-or so years; newslinkrss is one that replaced several of these ad-hoc filters
-by centralizing some very common pieces of code and is polished enough to be
+I'm still resisting and wrote lots of feed scrapers/filters in the last 10 or
+so years; newslinkrss is one that replaced several of these ad-hoc filters by
+centralizing some very common pieces of code and it is polished enough to be
 published.
 
 
@@ -44,8 +46,7 @@ published.
 ## Installing from PyPI
 
 This is the simplest installation method and will deliver the latest **stable**
-version of the program. To install the current stable version in your `$HOME`
-directory, just type:
+version of the program. To install in your `$HOME` directory, just type:
 
     pip3 install newslinkrss
 
@@ -60,11 +61,11 @@ This installation process is recommended for developers and people wanting
 the newest version. For that, just clone the Git repository and install or
 update the program with:
 
-    pip install -U .
+    pip3 install -U .
 
 You may want to do this in a virtual environment so it won't interfere with
-other user-level or system-wide components and will make experimentation
-with development versions easier. In this case, just do:
+other user-level or system-wide components and make experimentation with
+development versions easier. In this case, just do:
 
     python3 -m venv my-venv
     . my-venv/bin/activate
@@ -80,17 +81,108 @@ but a few nice features will be unavailable (XPath, `--with-body`, etc.).
 
 # Usage examples
 
-To generate a feed from site https://www.jaraguadosul.sc.gov.br/noticias.php ,
+newslinkrss is lacking a lot of documentation, but the following examples
+can show a bit of what it can and can not do. A complete list of options
+can be read by typing `newslinkrss --help`.
+
+
+### Simplest case
+
+The simplest use case is just load a website, select all links matching a
+pattern and expose a feed using the text of that link as description and
+assuming that the publishing date is the date the command was run. For example,
+to generate a feed from site https://www.jaraguadosul.sc.gov.br/noticias.php ,
 collecting all links with the substring `/news/` in the URL, use:
 
     newslinkrss -p '.+/news/.+' https://www.jaraguadosul.sc.gov.br/noticias.php
 
 
-### Following pages and generating complete feeds
+### Following pages
 
-And a more complex example where it is necessary to follow the target of
-candidate links and stitch information from several sources (URL, link text
-and destination contents) together. Assume we want to generate a feed from
+We may need to get more information that the one available in the URL and
+anchor text. This can be done by using option `--follow` (shortcut `-f`) that
+will make newslinkrss load the candidate target page and look for more data
+there. By default, it automatically captures the title of the page as the
+title of the feed entry, page description as the item contents, and the page
+publishing and update dates and times as the item publish time (**if** this
+information is available in the page in some common formats, like
+[Open Graph](https://ogp.me/) or Twitter cards.
+
+With this option, newslinkrss will follow at most `--max-links` in the order
+they appear in the HTML, make an HTTP GET request, download data up to the
+limit given by option `--max-page-length`, while waiting up to `--http-timeout`
+seconds to complete the process. Cookies will be remembered among there
+requests, but they will only be kept in memory and forgotten when the program
+finishes. To prevent excessive usage of memory and network resources, it is
+important to set a good filter pattern and choose the link and download limits
+wisely (the default values for these two are usually Ok, but edge cases may
+require some adjustments).
+
+
+### Generating complete feeds
+
+Reuters [killed](https://news.ycombinator.com/item?id=23576022) its RSS feeds
+but we can bring them back from the dead and into our news readers. Our
+criteria will be:
+
+- Find everything that appears as plain HTML on front page:
+  https://www.reuters.com/ There is an infinite scroll and more links are added
+  periodically with Javascript, but we can just ignore this and load the page
+  more frequently, given chance for ours news reader to capture them;
+
+- We want to be very selective with filtering so we only get the current news
+  and do not waste time downloading things like section listings, utility
+  pages, links for other domains, etc.  By looking at the URLs of the news
+  pages, we notice all them follow a pattern similar to:
+  https://www.reuters.com/world/europe/eu-proposes-create-solidarity-fund-ukraines-basic-needs-2022-03-18/
+  Notice they all are in domain "https://www.reuters.com/", have at least one
+  section ("/world/europe/") and it is followed by part of the title and the
+  publish date. The last part is really great, as it allows us to ignore
+  anything that does not look like a news article on the spot. So, a good
+  pattern will be `'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'`;
+
+- newslinkrss deduplicates URLs automatically, so we don't need to worry if we
+  end up capturing the same link twice;
+
+- Target pages have Open Graph meta tags, so we can `--follow` them and get
+  accurate publish dates and times with no extra effort. Better yet, as we know
+  that **all** news pages that we want have them, we can also instruct
+  newslinkrss to ignore any page without a valid date, preventing any non-news
+  article, captured by accident, from appearing in our feed. This is done with
+  option `--require-dates`;
+
+- As we are already following and downloading the links, there is no much
+  extra work to generate a full feed, i.e., one that includes the full text of
+  the page. Option `--with-body` will copy the entire contents of the "body"
+  element from the page into the feed, just removing a few obviously unwanted
+  tags (scripts, forms, etc.). Including the entire body works for every case,
+  but for this site we can filter a bit more and pick only actual text of the
+  news article, ignoring unwanted noise like menus, sidebars, links to other
+  news, etc. A quick "inspect element" shows that there is a single "article"
+  element in the pages and that it has the text we want; We can use a XPath
+  expression to select it with option `--body-xpath '//article'`. Again,
+  careful usage of options `--max-links` and `--max-page-length` is required,
+  as it is pretty easy to miss part of the text or generate some huge feeds
+  by accident.
+
+So, the complete syntax is:
+
+    newslinkrss \
+        --follow \
+        -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+' \
+        --max-page-length 64 \
+        --with-body \
+        --body-xpath '//article' \
+        --require-dates \
+        https://www.reuters.com/
+
+
+
+### Gathering more information
+
+A more complex example is where it is necessary not only to follow the target
+of candidate links but also stitch information from several sources (URL, link
+text and destination contents) together. Assume we want to generate a feed from
 https://revistaquestaodeciencia.com.br/ , which provides no facilities for it.
 Looking into the site we find that:
 
@@ -115,16 +207,11 @@ Looking into the site we find that:
   the processing to the first 50 links matching the regex (with option
   `--max-links`), only load the first 64 kB of data from the every followed
   link (option `--max-page-length`), and stop processing a page after 2s
-  (option `--http-timeout`).
+  (option `--http-timeout`);
 
-- As we are already following and downloading the links, there is no much
-  extra cost in generating a full feed, i.e., one that includes the full
-  text of the page. Option `--with-body` will copy the entire contents of
-  the "body" element from the page into the feed, just removing a few
-  obviously unwanted tags (scripts, forms, etc.). Using this option requires
-  a careful usage of options `--max-links` and `--max-page-length` to limit
-  the amount of data we download, as it is pretty easy to generate some huge
-  feeds.
+- We also generate a complete feed, as in the previous example, but there is
+  no easy way to select a HTML element that has only the actual text of the
+  article, so we include the complete of element "body".
 
 The resulting command line is:
 
@@ -144,7 +231,7 @@ of the options are set to the default values and are not strictly required
 but they are listed anyway. See `newslinkrss --help` for details.
 
 
-### Using XPath expressions
+### Using complex XPath expressions
 
 Sometimes we need to fight really hard to get the date that a particular item
 was last updated. Taking GitHub issues as an example: while GH provides Atom
@@ -166,8 +253,7 @@ GitHub uses to mark the timestamp of a comment and parse its date from
 attribute "datetime". This is done with options `--date-from-xpath` and
 `--xpath-date-fmt`.
 
-The resulting command line is the following but, again, the only extended
-documentation is the one available in `--help`.
+The resulting command line is the following:
 
     newslinkrss \
         --follow \
@@ -180,13 +266,16 @@ documentation is the one available in `--help`.
         --xpath-date-fmt '%Y-%m-%dT%H:%M:%SZ' \
         'https://github.com/lwindolf/liferea/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc'
 
-Debugging XPath expressions is not a very easy task, best way is just open
-the target page in Firefox, launch web developer tools and use the $x() helper
+Debugging XPath expressions is not a very easy task, best way is just open the
+target page in Firefox, launch web developer tools and use the $x() helper
 function to get what the expression will return, for example:
 `$x('(//h3/a/relative-time)[last()]/@datetime')`.
 
 
-### Caveats
+
+
+
+## Caveats
 
 Be very careful with escape characters! For the shell, it is recommended to
 use single quotes for regexes, so "\\" is not escaped. This is more
