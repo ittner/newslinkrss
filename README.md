@@ -236,20 +236,21 @@ but they are listed anyway. See `newslinkrss --help` for details.
 Sometimes we need to fight really hard to get the date that a particular item
 was last updated. Taking GitHub issues as an example: while GH provides Atom
 feeds for releases and commits (but always to specific branches), there is
-none for issues and pull requests. Of course, there is a API for that but it
-requires authentication with a GitHub account, enables tracking, and required
-writing a specific bridge to get the data as a feed. This makes the scraping
-approach easier even with the very convoluted example that follows.
+no equivalent for issues and pull requests. Of course, there is an API for
+that but it requires authentication with a GitHub account, enables tracking,
+and required writing a specific bridge to get the data as a feed. This makes
+the scraping approach easier even with the very convoluted example that
+follows.
 
 The URLs for issues and PRs are pretty usable, we can already use them to
 limit how many issues will be shown, their status, filter by date, etc. Just
-look at the example.
+look at the one used in the example.
 
 However, we need to get the date of the last comment on the issue and set it
-as the publishing date of the feed, otherwise the reader won't show us that
-it was updated. A solution for that is following every page and using a
-XPath expression to find the last occurrence of a "relative-time" tag that
-GitHub uses to mark the timestamp of a comment and parse its date from
+as the publishing date of the item, otherwise the reader won't show us that
+it was updated. A solution is to follow every issue page while using a XPath
+expression to find the last occurrence of a "relative-time" tag that GitHub
+uses to mark the timestamp of a comment and parse the absolute date from
 attribute "datetime". This is done with options `--date-from-xpath` and
 `--xpath-date-fmt`.
 
@@ -266,9 +267,9 @@ The resulting command line is the following:
         --xpath-date-fmt '%Y-%m-%dT%H:%M:%SZ' \
         'https://github.com/lwindolf/liferea/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc'
 
-Debugging XPath expressions is not a very easy task, best way is just open the
-target page in Firefox, launch web developer tools and use the $x() helper
-function to get what the expression will return, for example:
+Debugging XPath expressions is not a very easy task, the simplest way is just
+open the target page in Firefox, launch web developer tools and use the $x()
+helper function to get what the expression will return, for example:
 `$x('(//h3/a/relative-time)[last()]/@datetime')`.
 
 
@@ -277,8 +278,8 @@ function to get what the expression will return, for example:
 
 ## Caveats
 
-Be very careful with escape characters! For the shell, it is recommended to
-use single quotes for regexes, so "\\" is not escaped. This is more
+Be very careful with escape characters! In the shell, it is recommended to
+use single quotes for regexes, so "\\" is not escaped. This becomes more
 confusing if your feed reader also use escape sequences but with different
 or conflicting rules (e.g. Newsboat uses "\\" as escapes but does not follow
 the same rules used by bash). When in doubt, run the command in the shell or
