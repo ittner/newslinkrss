@@ -2,7 +2,7 @@
 
 newslinkrss generates RSS feeds from generic sites that do not provide their
 own. This is done by loading a given URL and collecting all links that
-matches a pattern (given as a regular expression) to gather the relevant
+matches a pattern, given as a regular expression, to gather the relevant
 information.
 
 The results are printed as a RSS feed to stdout or, optionally, to a file. The
@@ -21,7 +21,7 @@ This script is mostly intended to technically versed people using some kind
 of Unix operating system (e.g. Linux). I was planning to write a detailed
 documentation but I just gave up. There is no much hope of making it friendly
 to casual users when every use case requires complex command lines, abuse of
-regular expressions, timefmt strings, XPath, etc.
+regular expressions, strftime strings, XPath, etc.
 
 ## The Rant
 
@@ -111,33 +111,33 @@ information is available in the page in some common formats, like
 With this option, newslinkrss will follow at most `--max-links` in the order
 they appear in the HTML, make an HTTP GET request, download data up to the
 limit given by option `--max-page-length`, while waiting up to `--http-timeout`
-seconds to complete the process. Cookies will be remembered among there
-requests, but they will only be kept in memory and forgotten when the program
+seconds to complete the process. Cookies will be remembered among these
+requests, but they will only be kept in memory and forgotten once the program
 finishes. To prevent excessive usage of memory and network resources, it is
 important to set a good filter pattern and choose the link and download limits
 wisely (the default values for these two are usually Ok, but edge cases may
-require some adjustments).
+require some fine-tuning).
 
 
 ### Generating complete feeds
 
 Reuters [killed](https://news.ycombinator.com/item?id=23576022) its RSS feeds
-but we can bring them back from the dead and into our news readers. Our
-criteria will be:
+in mid 2020, but we can bring them back to life and right into our news
+readers. Our criteria will be:
 
-- Find everything that appears as plain HTML on front page:
+- Find everything that appears as plain HTML on the front page:
   https://www.reuters.com/ There is an infinite scroll and more links are added
   periodically with Javascript, but we can just ignore this and load the page
-  more frequently, given chance for ours news reader to capture them;
+  more frequently, giving chance to capture them;
 
 - We want to be very selective with filtering so we only get the current news
   and do not waste time downloading things like section listings, utility
-  pages, links for other domains, etc.  By looking at the URLs of the news
-  pages, we notice all them follow a pattern similar to:
+  pages, links for other domains, etc. By looking at the URLs of the news
+  pages, we can notice that all of them follow a pattern similar to:
   https://www.reuters.com/world/europe/eu-proposes-create-solidarity-fund-ukraines-basic-needs-2022-03-18/
   Notice they all are in domain "https://www.reuters.com/", have at least one
-  section ("/world/europe/") and it is followed by part of the title and the
-  publish date. The last part is really great, as it allows us to ignore
+  section ("/world/europe/") that is followed by part of the title and the
+  publish date. This format is really great, as it allows us to ignore
   anything that does not look like a news article on the spot. So, a good
   pattern will be `'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'`;
 
@@ -238,7 +238,7 @@ was last updated. Taking GitHub issues as an example: while GH provides Atom
 feeds for releases and commits (but always to specific branches), there is
 no equivalent for issues and pull requests. Of course, there is an API for
 that but it requires authentication with a GitHub account, enables tracking,
-and required writing a specific bridge to get the data as a feed. This makes
+and requires writing a specific bridge to get the data as a feed. This makes
 the scraping approach easier even with the very convoluted example that
 follows.
 
@@ -274,6 +274,36 @@ helper function to get what the expression will return, for example:
 
 
 
+### Error reporting, testing, and other small tricks
+
+By default, newslinkrss writes exceptions and error messages to the feed
+output itself. This is a very practical way to report errors to the user, as
+this program is intended to work mostly on the background of the actual
+user-facing application. It is possible to disable this behavior with option
+`--no-exception-feed` (shortcut `-E`).
+
+Notice that the program always return a non-zero status code on failures. Some
+news readers (e.g. Liferea) won't process the output in these cases and discard
+the feed entries with the error reports. You may need to override the status
+code with something like `newslinkrss YOUR_OPTIONS; exit 0`.
+
+newslinkrss has an option `--test` that will skip the feed generation step
+and just print the links and titles that were captured for a particular set
+of options to stdout. That's a simple way to check if a pattern is working
+as intended.
+
+Option `-o` allows writing the output to an file; it is no much different
+than redirecting stdout, but will ensure that only valid XML with the right
+encoding is written.
+
+Writing output to files and error reporting on the feed itself allows for
+some unusual but interesting use patterns: for example, it is trivial for a
+company, group, or development team to have an internal "feed server", where
+feeds are centrally downloaded by a cron job, saved to a web server public
+directory and then transparently provided to the end users. A setup with
+Alpine and nginx running in a LXD container is surprisingly small.
+
+
 
 
 ## Caveats
@@ -306,15 +336,15 @@ Yes :-)
 # Contributing
 
 For this project I started an experiment: I'm using [sourcehut](https://sr.ht/)
-for the code repository and other management tools, instead of the usual Github
-or Gitlab. That's the old-school way of doing things and most features just
-work without an user account. Check the [project page](https://sr.ht/~ittner/newslinkrss/)
-there to see how it works.
+as the primary repository for code and other tools, leaving the usual Github
+and Gitlab as non-advertised mirrors. Sourcehut does everything by the
+old-school way and most features just work without an user account. Check the
+[project page](https://sr.ht/~ittner/newslinkrss/) there to see how it works.
 
 If this sounds too strange, just clone the repository with an
 `git clone https://git.sr.ht/~ittner/newslinkrss`, publish your fork somewhere
 and send an email with the branches to be merged to `~ittner/newslinkrss@lists.sr.ht`
-(that's correct. Tildes and slashes are valid for email addresses)
+(that's correct: tildes and slashes are valid characters for email addresses).
 
 If you change the code, please run in through pyflakes for static analysis and
 [black](https://pypi.org/project/black/) to ensure a consistent formatting.
@@ -347,5 +377,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 - Author: Alexandre Erwin Ittner
 - Email: <alexandre@ittner.com.br>
 - Web: <https://www.ittner.com.br>
-
 
