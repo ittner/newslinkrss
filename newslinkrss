@@ -24,6 +24,7 @@ import datetime
 import argparse
 import traceback
 from html.parser import HTMLParser
+import http.cookiejar
 import urllib3
 
 import dateutil.parser
@@ -413,6 +414,14 @@ def test_links(link_grabber, args):
         print("")
 
 
+class EmptyCookieJar(http.cookiejar.CookieJar):
+    """A cookie jar that ignores all cookies."""
+
+    def set_cookie(self, cookie, *args, **kwargs):
+        """Method to "set" a cookie.  Actually ignores it."""
+        return
+
+
 def make_feed(args):
 
     base_url = args.url
@@ -420,6 +429,9 @@ def make_feed(args):
     session.headers = {
         "User-Agent": args.user_agent,
     }
+
+    if args.no_cookies:
+        session.cookies = EmptyCookieJar()
 
     page_content = ""
     req = None
@@ -815,6 +827,18 @@ def main():
         default=2.0,
         type=float,
         help="Timeout for HTTP(S) requests, in seconds",
+    )
+
+    parser.add_argument(
+        "--no-cookies",
+        action="store_true",
+        default=False,
+        help=(
+            "Do not remember cookies among requests. As cookies are never "
+            "persisted across invocations of this command, this will only "
+            "have any effect when using --follow, typically for sites that "
+            "use cookies to detect too many requests in a row."
+        ),
     )
 
     parser.add_argument(
