@@ -224,6 +224,17 @@ def try_date_from_str(src, date_rx, date_fmt):
     return rdate
 
 
+def make_clean_title(args, title):
+    if args.title_regex:
+        m = re.match(args.title_regex, title)
+        if m:
+            try:
+                title = m[1]
+            except IndexError:
+                pass
+    return title[: args.max_title_length]
+
+
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     attr_parser = CollectAttributesParser()
@@ -260,18 +271,18 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
             req.close()
 
     # Give a meaningful title for this entry.
-    clean_title = attr_parser.title or link_text or attr_parser.canonical or req.url
+    orig_title = attr_parser.title or link_text or attr_parser.canonical or req.url
+    clean_title = make_clean_title(args, orig_title)
     if clean_title == base_attrs.title:
         # The title is the same as the one from base url, a typical thing
         # from horribly-designed news pages (and also happens on a
         # government site I need to consult from time to time), so
         # replace it with the contents of the link text, which should
         # give a bit more useful information for the reader.
-        description += "Original title: %s<br/>" % clean_title
-        clean_title = link_text
+        description += "Original title: %s<br/>" % orig_title
+        clean_title = link_text[: args.max_title_length]
 
     description += "Link text: %s" % link_text
-    clean_title = clean_title[: args.max_title_length]
     item_url = attr_parser.canonical or req.url
 
     # Try to get a meaningful last modification date.
@@ -279,7 +290,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     if attr_parser.changed:
         date = attr_parser.changed
     if not date and args.date_from_text:
-        date = try_date_from_str(clean_title, args.date_from_text, args.text_date_fmt)
+        date = try_date_from_str(orig_title, args.date_from_text, args.text_date_fmt)
     if not date and args.date_from_url:
         date = try_date_from_str(item_url, args.date_from_url, args.url_date_fmt)
     if not date and HAVE_LXML and args.date_from_xpath:
@@ -330,7 +341,7 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
     if url in used_urls:
         return None
     used_urls.add(url)
-    clean_title = link_text[: args.max_title_length]
+    clean_title = make_clean_title(args, link_text)
     date = None
     if args.date_from_text:
         date = try_date_from_str(link_text, args.date_from_text, args.text_date_fmt)
@@ -542,6 +553,21 @@ def main():
         help=(
             "Use this alternate title for the feed instead of the one "
             "discovered from the URL."
+        ),
+    )
+
+    parser.add_argument(
+        "--title-regex",
+        action="store",
+        default=None,
+        metavar="REGEX",
+        help=(
+            "Use this regular expression to select only part of the original "
+            "title as the item title. This can be used to remove redundant "
+            "or irrelevant parts from the title.Regex must have at least one "
+            "group and, if it matches, the content of the first group will "
+            "be used as the title. If it does not match, the original title "
+            "will be used."
         ),
     )
 
