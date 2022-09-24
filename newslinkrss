@@ -578,7 +578,7 @@ def main():
         default=None,
         metavar="REGEX",
         help=(
-            "Interpret date and time od the feed item from the URL. This can "
+            "Interpret date and time of the feed item from the URL. This can "
             "spare us from downloading the entire target page in some sites "
             "and blogs that put a parseable date in its URL (e.g.: "
             '"https://example.org/posts/2020/09/22/happy-hobbit-day/") or '
@@ -609,7 +609,7 @@ def main():
             "value is a format string as specified by strftime(), and *must* "
             "contain at least the formats for year, month and date. This "
             "script can use hours and minutes if they are available, but "
-            "it is very rare for sites to put this information in URLs."
+            "it is very rare for sites to put this information in URLs. "
             "If this format is empty, the code will try to interpret it as "
             "some common date/time formats."
         ),
@@ -648,7 +648,7 @@ def main():
         help=(
             "The date format to be used with option --text-from-url. This "
             "value is a format string as specified by strftime(), and *must* "
-            "contain at least the formats for year, month and date."
+            "contain at least the formats for year, month and date. "
             "If this format is not given or empty, the code will try to "
             "interpret it as some common date/time formats."
         ),
@@ -888,8 +888,8 @@ def main():
         action="store",
         metavar="FILENAME",
         help=(
-            "Output file to save the feed. If not given, it will be written"
-            " to stdout."
+            "Output file to save the feed. If not given, it will be written "
+            "to stdout."
         ),
     )
 
