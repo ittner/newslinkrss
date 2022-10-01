@@ -170,7 +170,7 @@ So, the complete syntax is:
     newslinkrss \
         --follow \
         -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+' \
-        --max-page-length 64 \
+        --max-page-length 512 \
         --with-body \
         --body-xpath '//article' \
         --require-dates \
@@ -205,8 +205,8 @@ Looking into the site we find that:
   the title there. This must be done **very carefully**: we don't want to
   abuse the website or get stuck downloading gigabytes of data, so we limit
   the processing to the first 50 links matching the regex (with option
-  `--max-links`), only load the first 64 kB of data from the every followed
-  link (option `--max-page-length`), and stop processing a page after 2s
+  `--max-links`), only load the first 512 kB of data from the every followed
+  link (option `--max-page-length`), and stop processing a page after 4s
   (option `--http-timeout`);
 
 - We also generate a complete feed, as in the previous example, but there is
@@ -221,8 +221,8 @@ The resulting command line is:
         --follow \
         --with-body \
         --max-links 50 \
-        --max-page-length 64 \
-        --http-timeout 2 \
+        --max-page-length 512 \
+        --http-timeout 4 \
         'https://revistaquestaodeciencia.com.br/'
 
 To make understanding easier, this example uses the long, verbose, form of
