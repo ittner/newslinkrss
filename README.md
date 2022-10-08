@@ -72,10 +72,8 @@ development versions easier. In this case, just do:
     pip install -U .
 
 
-newslinkrss depends on a few libraries and has one technically optional
-dependency on [lxml](https://lxml.de/), but the setup script will always
-install it anyway -- it is possible to run the script without installing it,
-but a few nice features will be unavailable (XPath, `--with-body`, etc.).
+newslinkrss depends on a few libraries, this will ensure all them are also
+installed correctly.
 
 
 

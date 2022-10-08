@@ -31,15 +31,9 @@ import dateutil.parser
 import PyRSS2Gen
 import requests
 
-HAVE_LXML = False
-try:
-    import lxml.html
-    import lxml.html.clean
-    import lxml.etree
-
-    HAVE_LXML = True
-except ModuleNotFoundError:
-    pass
+import lxml.html
+import lxml.html.clean
+import lxml.etree
 
 
 DEFAULT_USER_AGENT = (
@@ -293,7 +287,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         date = try_date_from_str(orig_title, args.date_from_text, args.text_date_fmt)
     if not date and args.date_from_url:
         date = try_date_from_str(item_url, args.date_from_url, args.url_date_fmt)
-    if not date and HAVE_LXML and args.date_from_xpath:
+    if not date and args.date_from_xpath:
         try:
             tree = lxml.html.document_fromstring(page_text)
             for res in tree.xpath(args.date_from_xpath):
@@ -309,7 +303,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     if args.require_dates and not date:
         return None
 
-    if HAVE_LXML and args.with_body:
+    if args.with_body:
         try:
             if tree is None:
                 # Evil premature optimization: perhaps we already parsed the
@@ -654,73 +648,72 @@ def main():
         ),
     )
 
-    if HAVE_LXML:
-        parser.add_argument(
-            "--date-from-xpath",
-            action="store",
-            default=None,
-            metavar="XPATH_EXPRESSION",
-            help=(
-                "Use a XPath expression to get the text containing the date "
-                "and time the page was published. This allows picking the "
-                "date from any element present in the page, but at the cost "
-                "of some complexity and *requires* downloading the candidate "
-                "pages by passing option --follow (--max-page-length can "
-                "also be used to limit the amount of downloaded data, but "
-                "if the required element is not in it, the date won't be "
-                "available). "
-                "Notice that options --date-from-xpath, --xpath-date-regex, "
-                "and --xpath-date-fmt work together as a pipeline, first "
-                "getting the text from elements in the page, then optionally "
-                "selecting a substring from it, and then parsing it as date "
-                "and time. "
-                "Example: the XPath expression '//span[@class=\"published-date\"]/@datetime' "
-                'will pick the date from attribute "datetime" from the first '
-                '"span" tag that has an attribute named "class" with value '
-                'equal to "published-date".'
-            ),
-        )
+    parser.add_argument(
+        "--date-from-xpath",
+        action="store",
+        default=None,
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "Use a XPath expression to get the text containing the date "
+            "and time the page was published. This allows picking the "
+            "date from any element present in the page, but at the cost "
+            "of some complexity and *requires* downloading the candidate "
+            "pages by passing option --follow (--max-page-length can "
+            "also be used to limit the amount of downloaded data, but "
+            "if the required element is not in it, the date won't be "
+            "available). "
+            "Notice that options --date-from-xpath, --xpath-date-regex, "
+            "and --xpath-date-fmt work together as a pipeline, first "
+            "getting the text from elements in the page, then optionally "
+            "selecting a substring from it, and then parsing it as date "
+            "and time. "
+            "Example: the XPath expression '//span[@class=\"published-date\"]/@datetime' "
+            'will pick the date from attribute "datetime" from the first '
+            '"span" tag that has an attribute named "class" with value '
+            'equal to "published-date".'
+        ),
+    )
 
-        parser.add_argument(
-            "--xpath-date-regex",
-            action="store",
-            default="(.+)",
-            metavar="REGEX",
-            help=(
-                "A regular expression containing a single group that is used "
-                "to select the part of the text returned by --date-from-xpath, "
-                "that will then be parsed as a date using the format given "
-                "by option --xpath-date-fmt. This option may be useful when "
-                "the XPath expression required to select the exact text just "
-                "becomes too complicated or verbose and doing it in two steps "
-                "just becomes easier. This option can be safely omitted if "
-                "this step is not necessary, as the default regex select the "
-                "complete input. "
-                "Notice that options --date-from-xpath, --xpath-date-regex, "
-                "and --xpath-date-fmt work together as a pipeline, first "
-                "getting the text from elements in the page, then optionally "
-                "selecting a substring from it, and then parsing it as date "
-                "and time. "
-            ),
-        )
+    parser.add_argument(
+        "--xpath-date-regex",
+        action="store",
+        default="(.+)",
+        metavar="REGEX",
+        help=(
+            "A regular expression containing a single group that is used "
+            "to select the part of the text returned by --date-from-xpath, "
+            "that will then be parsed as a date using the format given "
+            "by option --xpath-date-fmt. This option may be useful when "
+            "the XPath expression required to select the exact text just "
+            "becomes too complicated or verbose and doing it in two steps "
+            "just becomes easier. This option can be safely omitted if "
+            "this step is not necessary, as the default regex select the "
+            "complete input. "
+            "Notice that options --date-from-xpath, --xpath-date-regex, "
+            "and --xpath-date-fmt work together as a pipeline, first "
+            "getting the text from elements in the page, then optionally "
+            "selecting a substring from it, and then parsing it as date "
+            "and time. "
+        ),
+    )
 
-        parser.add_argument(
-            "--xpath-date-fmt",
-            action="store",
-            default=None,
-            metavar="DATE_FORMAT",
-            help=(
-                "The date format to be used with option --date-from-xpath. "
-                "This value is a format string as specified by strftime(), and "
-                "*must* contain at least the formats for year, month and date. "
-                "Notice that options --date-from-xpath, --xpath-date-regex, "
-                "and --xpath-date-fmt work together as a pipeline, first "
-                "getting the text from elements in the page, then optionally "
-                "selecting a substring from it, and then parsing it as date "
-                "and time. If this format is not given or empty, the code "
-                "will try to interpret it as some common date/time formats."
-            ),
-        )
+    parser.add_argument(
+        "--xpath-date-fmt",
+        action="store",
+        default=None,
+        metavar="DATE_FORMAT",
+        help=(
+            "The date format to be used with option --date-from-xpath. "
+            "This value is a format string as specified by strftime(), and "
+            "*must* contain at least the formats for year, month and date. "
+            "Notice that options --date-from-xpath, --xpath-date-regex, "
+            "and --xpath-date-fmt work together as a pipeline, first "
+            "getting the text from elements in the page, then optionally "
+            "selecting a substring from it, and then parsing it as date "
+            "and time. If this format is not given or empty, the code "
+            "will try to interpret it as some common date/time formats."
+        ),
+    )
 
     parser.add_argument(
         "--test",
@@ -746,47 +739,46 @@ def main():
         ),
     )
 
-    if HAVE_LXML:
-        parser.add_argument(
-            "-B",
-            "--with-body",
-            action="store_true",
-            default=False,
-            help=(
-                "Include the page body in the feed, i.e., build a complete "
-                "feed. This option requires --follow to work and some "
-                "caution is required as it is pretty easy to generate "
-                "gigantic feeds by following too many links or reading too "
-                "much data from them. Careful usage of options --max-links "
-                "and --max-page-length is required! The program will only "
-                "pick the contents of the <body> element of the pages, up to "
-                "the point that --max-page-length allowed it to be loaded. "
-                "SECURITY: this program does some effort to remove malicious "
-                "content (e.g. scripts) inserted by the page, but the output "
-                "is still considered unsafe and we understand that feed "
-                "readers *must* handle it in the same way they deal with "
-                "potentially malicious feeds loaded from the network. If "
-                "your feed reader treats feeds generated by local commands "
-                "more liberally, please do not use this option."
-            ),
-        )
+    parser.add_argument(
+        "-B",
+        "--with-body",
+        action="store_true",
+        default=False,
+        help=(
+            "Include the page body in the feed, i.e., build a complete "
+            "feed. This option requires --follow to work and some "
+            "caution is required as it is pretty easy to generate "
+            "gigantic feeds by following too many links or reading too "
+            "much data from them. Careful usage of options --max-links "
+            "and --max-page-length is required! The program will only "
+            "pick the contents of the <body> element of the pages, up to "
+            "the point that --max-page-length allowed it to be loaded. "
+            "SECURITY: this program does some effort to remove malicious "
+            "content (e.g. scripts) inserted by the page, but the output "
+            "is still considered unsafe and we understand that feed "
+            "readers *must* handle it in the same way they deal with "
+            "potentially malicious feeds loaded from the network. If "
+            "your feed reader treats feeds generated by local commands "
+            "more liberally, please do not use this option."
+        ),
+    )
 
-        parser.add_argument(
-            "--body-xpath",
-            action="store",
-            type=str,
-            default="/html/body",
-            metavar="XPATH_EXPRESSION",
-            help=(
-                "A XPath expression selecting the HTML element to be "
-                "included in the body of the feed entry when option "
-                "--with-body is used. By default, this includes the entire "
-                '"body" HTML element, but sometimes a more restricted '
-                "selection is welcome, for example, one that includes only "
-                "the relevant text of a news article, leaving out menus, "
-                "headers, related news, etc."
-            ),
-        )
+    parser.add_argument(
+        "--body-xpath",
+        action="store",
+        type=str,
+        default="/html/body",
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "A XPath expression selecting the HTML element to be "
+            "included in the body of the feed entry when option "
+            "--with-body is used. By default, this includes the entire "
+            '"body" HTML element, but sometimes a more restricted '
+            "selection is welcome, for example, one that includes only "
+            "the relevant text of a news article, leaving out menus, "
+            "headers, related news, etc."
+        ),
+    )
 
     parser.add_argument(
         "--require-dates",
