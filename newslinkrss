@@ -229,6 +229,17 @@ def make_clean_title(args, title):
     return title[: args.max_title_length]
 
 
+def remove_unwanted_body_elements(args, body):
+    if args.body_remove_tag:
+        lxml.etree.strip_tags(body, *args.body_remove_tag)
+    if args.body_remove_xpath:
+        for expr in args.body_remove_xpath:
+            res = body.xpath(expr)
+            if res:
+                for elem in res:
+                    elem.getparent().remove(elem)
+
+
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     attr_parser = CollectAttributesParser()
@@ -311,10 +322,12 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                 tree = lxml.html.document_fromstring(page_text)
             res = tree.xpath(args.body_xpath)
             if res and res[0] is not None:
+                body = res[0]
+                remove_unwanted_body_elements(args, body)
                 cleaner = lxml.html.clean.Cleaner()
-                clean_body = cleaner.clean_html(res[0])
+                body = cleaner.clean_html(body)
                 description = lxml.html.tostring(
-                    clean_body, pretty_print=False, encoding="unicode"
+                    body, pretty_print=False, encoding="unicode"
                 )
         except (lxml.etree.ParserError):
             pass
@@ -777,6 +790,39 @@ def main():
             "selection is welcome, for example, one that includes only "
             "the relevant text of a news article, leaving out menus, "
             "headers, related news, etc."
+        ),
+    )
+
+    parser.add_argument(
+        "-R",
+        "--body-remove-tag",
+        action="append",
+        type=str,
+        default=None,
+        metavar="TAG_NAME",
+        help=(
+            "Remove all occurences of the given tag from the feed body and "
+            "move their child elements to their parents. This only makes "
+            "sense if --with-body is used. This option can be used as many "
+            "times as required to remove all unwanted elements and all "
+            "children elements. For a more complex version, which allow "
+            "arbitrary XPath expressions, see --body-remove-xpath."
+        ),
+    )
+
+    parser.add_argument(
+        "-X",
+        "--body-remove-xpath",
+        action="append",
+        type=str,
+        default=None,
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "Delete the elements specified by the XPath argument from the "
+            "feed body, including all their children. This only makes sense "
+            "if --with-body is used. This option can be used as many times "
+            "as required to remove all unwanted elements. For a simpler "
+            "version, to only remove specific tags, see --body-remove-tag."
         ),
     )
 
