@@ -22,6 +22,7 @@ import sys
 import re
 import datetime
 import argparse
+import logging
 import traceback
 from html.parser import HTMLParser
 import http.cookiejar
@@ -39,6 +40,23 @@ import lxml.etree
 DEFAULT_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64; rv:105.0) Gecko/20100101 Firefox/105.0"
 )
+
+USER_LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "FATAL"]
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
+
+def set_log_level(args):
+    if not args.log:
+        return
+    level = args.log.upper()
+    if level not in USER_LOG_LEVELS:
+        raise ValueError("Bad log level string %s" % args.log)
+    numlevel = getattr(logging, level, None)
+    if not isinstance(numlevel, int):
+        raise ValueError("Log level %s not defined" % args.log)
+    logger.setLevel(numlevel)
+    logger.info("Log level set to %d (%s)", numlevel, level)
 
 
 def _first_valid_attr_in_list(attrs, name):
@@ -67,6 +85,8 @@ class CollectLinksParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if (self.max_items is not None) and (len(self.links) >= self.max_items):
+            if not self.limit_reached:
+                logger.warning("limit of %d links reached", self.max_items)
             self.limit_reached = True
             return
 
@@ -103,6 +123,7 @@ class CollectLinksParser(HTMLParser):
             if self._last_link and self._last_link not in self._found_links:
                 self._found_links.add(self._last_link)
                 self.links.append((self._last_link, link_text))
+                logger.info("New link added: %s %s", self._last_link, link_text)
             self._last_link = False
 
 
@@ -173,8 +194,9 @@ class CollectAttributesParser(HTMLParser):
                     dt = dateutil.parser.parse(content)
                     if (not self.changed) or (self.changed < dt):
                         self.changed = dt
+                        logger.debug("Found new changed date %s", dt)
                 except:
-                    pass
+                    logger.exception("When parsing changed date")
 
             if prop == "og:url" and not self.canonical:
                 # <meta property="og:url" content="xxxxx">
@@ -214,7 +236,10 @@ def try_date_from_str(src, date_rx, date_fmt):
             # No date format, use dateutil's best guess.
             rdate = dateutil.parser.parse(date_txt)
     except (AttributeError, IndexError, ValueError):
-        pass
+        logger.exception(
+            "when parsing date with src=%s, fmt=%s, rx=%s", src, date_fmt, date_rx
+        )
+
     return rdate
 
 
@@ -237,6 +262,7 @@ def remove_unwanted_body_elements(args, body):
             res = body.xpath(expr)
             if res:
                 for elem in res:
+                    logger.debug("Removing element %s", elem)
                     elem.getparent().remove(elem)
 
 
@@ -248,6 +274,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     page_text = ""
     tree = None
     try:
+        logger.info("Following URL %s", url)
         req = session.get(url, timeout=args.http_timeout, stream=True)
         if req.url in used_urls:
             return None
@@ -269,6 +296,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         urllib3.exceptions.ReadTimeoutError,
         requests.exceptions.Timeout,
     ):
+        logger.exception("When downloading %s", url)
         # We should handle this somehow.
         return None
     finally:
@@ -306,12 +334,14 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                     res, args.xpath_date_regex, args.xpath_date_fmt
                 )
                 if date:
+                    logger.debug("Found date from XPath %s", date)
                     break
         except (lxml.etree.XPathEvalError, lxml.etree.ParserError):
             pass
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
+        logger.info("Ignoring feed entry without date %s", url)
         return None
 
     if args.with_body:
@@ -330,7 +360,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                     body, pretty_print=False, encoding="unicode"
                 )
         except (lxml.etree.ParserError):
-            pass
+            logger.exception("When trying to get document body")
 
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
@@ -356,6 +386,7 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
         date = try_date_from_str(url, args.date_from_url, args.url_date_fmt)
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
+        logger.info("Ignoring feed entry without date %s", url)
         return None
 
     if date:
@@ -729,6 +760,14 @@ def main():
     )
 
     parser.add_argument(
+        "--log",
+        action="store",
+        type=str,
+        default=None,
+        help=("Define a log level. Valid values are " + ", ".join(USER_LOG_LEVELS)),
+    )
+
+    parser.add_argument(
         "--test",
         action="store_true",
         default=False,
@@ -936,6 +975,7 @@ def main():
     )
 
     args = parser.parse_args()
+    set_log_level(args)
 
     try:
         make_feed(args)
