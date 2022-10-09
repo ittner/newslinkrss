@@ -403,9 +403,11 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
 
 def write_feed(rss, args):
     if args.output:
+        logger.debug("Writing feed to %s", args.output)
         with open(args.output, "w") as fp:
             rss.write_xml(fp, encoding="utf-8")
     else:
+        logger.debug("Writing feed to stdout")
         rss.write_xml(sys.stdout, encoding="utf-8")
 
 
