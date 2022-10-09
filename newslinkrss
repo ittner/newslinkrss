@@ -137,6 +137,7 @@ class CollectAttributesParser(HTMLParser):
     canonical - String with the Canonical URL for the page or None
     description - String with a best-guest for a description or None
     changed   - Datetime with a best-guest for the modification time or None
+    author    - String with a best-guest for the author name or None
     """
 
     def __init__(self):
@@ -148,6 +149,7 @@ class CollectAttributesParser(HTMLParser):
         self.description = None
         self.canonical = None
         self.changed = None
+        self.author = None
 
     def handle_starttag(self, tag, attrs):
         if tag == "head":
@@ -213,6 +215,9 @@ class CollectAttributesParser(HTMLParser):
                     (not self.description) or (len(content) > len(self.description))
                 ):
                     self.description = content
+
+            if not self.author and (name == "author" or prop == "article:author"):
+                self.author = content
 
     def handle_data(self, data):
         if self._title_lst is not None:
@@ -372,6 +377,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=item_url,
+        author=attr_parser.author,
         description=description,
         guid=PyRSS2Gen.Guid(req.url),
         pubDate=date,
