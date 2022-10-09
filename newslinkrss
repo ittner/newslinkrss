@@ -980,6 +980,7 @@ def main():
     try:
         make_feed(args)
     except Exception as exc:
+        logger.exception("Unhandled exception")
         if args.no_exception_feed:
             raise exc
         make_exception_feed(exc, args)
