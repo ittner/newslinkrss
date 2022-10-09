@@ -173,6 +173,10 @@ class CollectAttributesParser(HTMLParser):
             name = _first_valid_attr_in_list(attrs, "name")
             prop = _first_valid_attr_in_list(attrs, "property")
             content = _first_valid_attr_in_list(attrs, "content")
+            if name:
+                name = name.lower()
+            if prop:
+                prop = prop.lower()
 
             # Attributes defined by the Open Graph Protocol: A lot of sites
             # which refuse to provide feeds have this nice attributes so their
@@ -203,7 +207,7 @@ class CollectAttributesParser(HTMLParser):
                 self.canonical = content
 
             if prop in ("og:description", "twitter:description") or (
-                name and name.lower() == "description"
+                name == "description"
             ):
                 if len(content) > 8 and (
                     (not self.description) or (len(content) > len(self.description))
