@@ -239,6 +239,7 @@ def try_date_from_str(src, date_rx, date_fmt):
         if not m:
             return None
         date_txt = m.group(1)
+        logger.debug("date regex matched: src=%s, rx=%s", src, date_rx)
         if date_fmt:
             rdate = datetime.datetime.strptime(date_txt, date_fmt)
         else:
@@ -339,6 +340,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         try:
             tree = lxml.html.document_fromstring(page_text)
             for res in tree.xpath(args.date_from_xpath):
+                logger.debug("date-from-xpath found candidate text: '%s'", res)
                 date = try_date_from_str(
                     res, args.xpath_date_regex, args.xpath_date_fmt
                 )
