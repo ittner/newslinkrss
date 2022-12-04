@@ -94,6 +94,16 @@ collecting all links with the substring `/news/` in the URL, use:
 
     newslinkrss -p '.+/news/.+' https://www.jaraguadosul.sc.gov.br/noticias.php
 
+The link pattern (-p) has a counterpart `--ignore-pattern` (shortcut `-i`)
+which also accepts a regular expression and makes `newslinkrss` ignore any
+matching URL. Depending on the amount of information that the website puts on
+the URLs, this can be used for excluding native advertisement, uninteresting
+sections, or other unwanted content from the feed, without support from the
+feed reader and without counting to the total URL limit (`-n`). While it is
+possible to add this ignore rule to the link pattern itself, using `-i`
+prevents that regular expression from becoming excessively complex and makes
+debugging easier.
+
 
 ### Following pages
 

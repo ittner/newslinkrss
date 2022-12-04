@@ -71,9 +71,10 @@ def _first_valid_attr_in_list(attrs, name):
 
 
 class CollectLinksParser(HTMLParser):
-    def __init__(self, url_patt=None, max_items=None, base_url=None):
+    def __init__(self, url_patt=None, ignore_patt=None, max_items=None, base_url=None):
         HTMLParser.__init__(self)
         self.url_patt = url_patt
+        self.ignore_patt = ignore_patt
         self.max_items = max_items
         self.base_url = base_url
         self.links = []
@@ -101,8 +102,10 @@ class CollectLinksParser(HTMLParser):
 
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
-            if href not in self._found_links and (
-                not self.url_patt or re.match(self.url_patt, href)
+            if (
+                href not in self._found_links
+                and (not self.url_patt or re.match(self.url_patt, href))
+                and (not self.ignore_patt or not re.match(self.ignore_patt, href))
             ):
                 self._last_link_text = []
                 self._grab_link_text = True
@@ -520,7 +523,9 @@ def make_feed(args):
     request_base = base_attrs.base or req.url
 
     # Grab any links of interest from the base URL.
-    link_grabber = CollectLinksParser(args.link_pattern, args.max_links, request_base)
+    link_grabber = CollectLinksParser(
+        args.link_pattern, args.ignore_pattern, args.max_links, request_base
+    )
     link_grabber.feed(page_content)
     base_links = link_grabber.links
 
@@ -594,6 +599,21 @@ def main():
         help=(
             "A regular expression to filter the URLs of links that the "
             "script will follow or capture to generate every feed item."
+        ),
+    )
+
+    parser.add_argument(
+        "-i",
+        "--ignore-pattern",
+        action="store",
+        default=None,
+        metavar="REGEX",
+        help=(
+            "A regular expression used to ignore URLs even if they match "
+            "--link-pattern. This may be used to prevent unwanted items "
+            "from appearing in the feed while keeping the link pattern "
+            "simpler (i.e. no need to make that regex excessively complex "
+            "by embedding the ignored patterns in it)."
         ),
     )
 
