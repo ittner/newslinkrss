@@ -276,7 +276,18 @@ def remove_unwanted_body_elements(args, body):
             res = body.xpath(expr)
             if res:
                 for elem in res:
-                    logger.debug("Removing element %s", elem)
+                    logger.debug(
+                        "body-remove-xpath %s matched: deleting element %s", expr, elem
+                    )
+                    elem.getparent().remove(elem)
+    if args.body_remove_csss:
+        for expr in args.body_remove_csss:
+            res = body.cssselect(expr)
+            if res:
+                for elem in res:
+                    logger.debug(
+                        "body-remove-csss %s matched: deleting element %s", expr, elem
+                    )
                     elem.getparent().remove(elem)
 
 
@@ -905,8 +916,9 @@ def main():
             "move their child elements to their parents. This only makes "
             "sense if --with-body is used. This option can be used as many "
             "times as required to remove all unwanted elements and all "
-            "children elements. For a more complex version, which allow "
-            "arbitrary XPath expressions, see --body-remove-xpath."
+            "children elements. For a more complex operations that allow "
+            "arbitrary expressions, see --body-remove-csss and "
+            "--body-remove-xpath."
         ),
     )
 
@@ -921,8 +933,26 @@ def main():
             "Delete the elements specified by the XPath argument from the "
             "feed body, including all their children. This only makes sense "
             "if --with-body is used. This option can be used as many times "
-            "as required to remove all unwanted elements. For a simpler "
-            "version, to only remove specific tags, see --body-remove-tag."
+            "as required to remove all unwanted elements. For a CSS Selector "
+            "equivalent, see --body-remove-csss. For a simpler version, "
+            "to only remove specific tags, see --body-remove-tag."
+        ),
+    )
+
+    parser.add_argument(
+        "-C",
+        "--body-remove-csss",
+        action="append",
+        type=str,
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=(
+            "Delete the elements specified by the CSS Selector from the "
+            "feed body, including all their children. This only makes sense "
+            "if --with-body is used. This option can be used as many times "
+            "as required to remove all unwanted elements. For a XPath "
+            "equivalent, see --body-remove-xpath. For a simpler version, "
+            "to only remove specific tags, see --body-remove-tag."
         ),
     )
 
