@@ -587,7 +587,15 @@ def make_feed(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Forcibly generate RSS feeds from generic sites",
+        description=(
+            "newslinkrss generates RSS feeds from websites that do not "
+            "provide their own. This is done by loading a given URL and "
+            "collecting links that matches a pattern, given as a regular "
+            "expression, to gather the relevant information, optionally "
+            "visiting them to get more details and even processing the "
+            "target pages with XPath and CSS Selectors if required. "
+            "It basically works as a purpose specific crawler or scraper."
+        ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -596,6 +604,7 @@ def main():
         "--max-links",
         action="store",
         default=50,
+        metavar="NUMBER",
         type=int,
         help="Maximum number of links to follow.",
     )
@@ -605,6 +614,7 @@ def main():
         "--max-title-length",
         action="store",
         default=150,
+        metavar="NUMBER",
         type=int,
         help="Maximum length of a feed title, in characters.",
     )
@@ -640,6 +650,7 @@ def main():
         "-T",
         "--title",
         action="store",
+        metavar="ALTERNATE_TITLE",
         default=None,
         help=(
             "Use this alternate title for the feed instead of the one "
@@ -694,7 +705,7 @@ def main():
         "--url-date-fmt",
         action="store",
         default="%Y/%m/%d",
-        metavar="DATE FORMAT",
+        metavar="DATE_FORMAT",
         help=(
             "The date format to be used with option --date-from-url. This "
             "value is a format string as specified by strftime(), and *must* "
@@ -817,6 +828,7 @@ def main():
         action="store",
         type=str,
         default=None,
+        metavar="LOG_LEVEL",
         help=("Define a log level. Valid values are " + ", ".join(USER_LOG_LEVELS)),
     )
 
@@ -912,7 +924,7 @@ def main():
         default=None,
         metavar="TAG_NAME",
         help=(
-            "Remove all occurences of the given tag from the feed body and "
+            "Remove all occurrences of the given tag from the feed body and "
             "move their child elements to their parents. This only makes "
             "sense if --with-body is used. This option can be used as many "
             "times as required to remove all unwanted elements and all "
@@ -935,7 +947,8 @@ def main():
             "if --with-body is used. This option can be used as many times "
             "as required to remove all unwanted elements. For a CSS Selector "
             "equivalent, see --body-remove-csss. For a simpler version, "
-            "to only remove specific tags, see --body-remove-tag."
+            "to only remove tags but preserve child elements, see "
+            "--body-remove-tag."
         ),
     )
 
@@ -952,7 +965,8 @@ def main():
             "if --with-body is used. This option can be used as many times "
             "as required to remove all unwanted elements. For a XPath "
             "equivalent, see --body-remove-xpath. For a simpler version, "
-            "to only remove specific tags, see --body-remove-tag."
+            "to only remove tags but preserve child elements, see "
+            "--body-remove-tag."
         ),
     )
 
@@ -971,6 +985,7 @@ def main():
         "-U",
         "--user-agent",
         action="store",
+        metavar="UA_STRING",
         default=DEFAULT_USER_AGENT,
         help=(
             "Set the user agent to identify ourselves to the site. Some sites "
@@ -984,6 +999,7 @@ def main():
         "--max-page-length",
         action="store",
         default=2048,
+        metavar="NUMBER",
         type=int,
         help=(
             "Maximum amount of data, in kilobytes, to download from a single "
@@ -1002,6 +1018,7 @@ def main():
         "--max-first-page-length",
         action="store",
         default=2048,
+        metavar="NUMBER",
         type=int,
         help=(
             "Maximum amount of data, in kilobytes, to download from the "
@@ -1020,6 +1037,7 @@ def main():
         action="store",
         default=2.0,
         type=float,
+        metavar="SECONDS",
         help="Timeout for HTTP(S) requests, in seconds",
     )
 
