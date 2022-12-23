@@ -21,7 +21,7 @@ This script is mostly intended to technically versed people using some kind
 of Unix operating system (e.g. Linux). I was planning to write a detailed
 documentation but I just gave up. There is no much hope of making it friendly
 to casual users when every use case requires complex command lines, abuse of
-regular expressions, strftime strings, XPath, etc.
+regular expressions, strftime strings, XPath, CSS Selectors, etc.
 
 ## The Rant
 
@@ -167,11 +167,13 @@ readers. Our criteria will be:
   but for this site we can filter a bit more and pick only actual text of the
   news article, ignoring unwanted noise like menus, sidebars, links to other
   news, etc. A quick "inspect element" shows that there is a single "article"
-  element in the pages and that it has the text we want; We can use a XPath
-  expression to select it with option `--body-xpath '//article'`. Again,
-  careful usage of options `--max-links` and `--max-page-length` is required,
-  as it is pretty easy to miss part of the text or generate some huge feeds
-  by accident.
+  element in the pages and that it has the text we want, so we can use both
+  XPath expressions or a CSS Selectors to pick it from the DOM; in this case
+  we choose XPath by using option `--body-xpath '//article'` (sometimes CSS
+  Selectors are easier and cleaner, so we should use `--body-csss` instead).
+  Again, careful usage of options `--max-links` and `--max-page-length` is
+  required, as it is pretty easy to miss part of the text or generate some
+  huge feeds by accident.
 
 So, the complete syntax is:
 

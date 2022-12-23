@@ -35,6 +35,7 @@ import requests
 import lxml.html
 import lxml.html.clean
 import lxml.etree
+import lxml.cssselect
 
 
 DEFAULT_USER_AGENT = (
@@ -364,7 +365,14 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                 # Evil premature optimization: perhaps we already parsed the
                 # document looking for dates.
                 tree = lxml.html.document_fromstring(page_text)
-            res = tree.xpath(args.body_xpath)
+
+            res = None
+            if args.body_xpath:
+                res = tree.xpath(args.body_xpath)
+            if (not res or res[0] is None) and args.body_csss:
+                res = tree.cssselect(args.body_csss)
+            if not args.body_xpath and not args.body_csss:
+                res = tree.xpath("/html/body")
             if res and res[0] is not None:
                 body = res[0]
                 remove_unwanted_body_elements(args, body)
@@ -853,16 +861,35 @@ def main():
         "--body-xpath",
         action="store",
         type=str,
-        default="/html/body",
+        default=None,
         metavar="XPATH_EXPRESSION",
         help=(
-            "A XPath expression selecting the HTML element to be "
-            "included in the body of the feed entry when option "
-            "--with-body is used. By default, this includes the entire "
-            '"body" HTML element, but sometimes a more restricted '
-            "selection is welcome, for example, one that includes only "
-            "the relevant text of a news article, leaving out menus, "
-            "headers, related news, etc."
+            "A XPath expression selecting the HTML element to be included in "
+            "the body of the feed entry when option --with-body is used. By "
+            'default, newslinkrss will use the entire "body" HTML element, '
+            "but sometimes a more restricted selection is welcome, for "
+            "example, one that includes only the relevant text of a news "
+            "article, leaving out menus, headers, related news, etc. "
+            "This option can be used together with --body-csss and any "
+            "that matches will be used, with XPath having priority."
+        ),
+    )
+
+    parser.add_argument(
+        "--body-csss",
+        action="store",
+        type=str,
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=(
+            "A CSS Selector to pick the HTML element to be included in the "
+            "body of the feed entry when option --with-body is used. By "
+            'default, newslinkrss will use the entire "body" HTML element, '
+            "but sometimes a more restricted selection is welcome, for "
+            "example, one that includes only the relevant text of a news "
+            "article, leaving out menus, headers, related news, etc. "
+            "This option can be used together with --body-xpath and any "
+            "that matches will be used, with XPath having priority."
         ),
     )
 
