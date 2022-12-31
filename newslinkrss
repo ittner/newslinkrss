@@ -36,6 +36,7 @@ import lxml.html
 import lxml.html.clean
 import lxml.etree
 import lxml.cssselect
+import cssselect
 
 
 DEFAULT_USER_AGENT = (
@@ -364,6 +365,21 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                     break
         except (lxml.etree.XPathEvalError, lxml.etree.ParserError):
             pass
+    if not date and args.date_from_csss:
+        try:
+            if tree is None:
+                tree = lxml.html.document_fromstring(page_text)
+            for res in tree.cssselect(args.date_from_csss):
+                etext = res.text
+                logger.debug("date-from-csss found candidate text: '%s'", etext)
+                date = try_date_from_str(
+                    etext, args.csss_date_regex, args.csss_date_fmt
+                )
+                if date:
+                    logger.debug("Found date from CSS Selector %s", date)
+                    break
+        except (cssselect.parser.SelectorSyntaxError, lxml.etree.ParserError):
+            logger.exception("When handling a CSS selector")
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
@@ -820,6 +836,70 @@ def main():
             "selecting a substring from it, and then parsing it as date "
             "and time. If this format is not given or empty, the code "
             "will try to interpret it as some common date/time formats."
+        ),
+    )
+
+    parser.add_argument(
+        "--date-from-csss",
+        action="store",
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=(
+            "Use a CSS Selector to get the text containing the date and "
+            "time the page was published. This allows picking the date "
+            "from any element present in the page, but at the cost of some "
+            "complexity and *requires* downloading the candidate pages by "
+            "passing option --follow (--max-page-length can also be used "
+            "to limit the amount of downloaded data, but if the required "
+            "element is not in it, the date won't be available). "
+            "Notice that options --date-from-csss, --csss-date-regex, and "
+            "--csss-date-fmt work together as a pipeline, first getting the "
+            "text from elements in the page, then optionally selecting a "
+            "substring from it, and then parsing it as date and time. "
+            "Example: the CSS Selector 'span.published-date' will pick the "
+            "date from the inner text from the first 'span' tag with class "
+            "'published-date' that generates a valid date according to the "
+            "regular expression given in option --csss-date-regex and date "
+            "format from option --csss-date-fmt."
+        ),
+    )
+
+    parser.add_argument(
+        "--csss-date-regex",
+        action="store",
+        default="(.+)",
+        metavar="REGEX",
+        help=(
+            "A regular expression containing a single group that is used "
+            "to select the part of the text returned by --date-from-csss, "
+            "that will then be parsed as a date using the format given "
+            "by option --csss-date-fmt. This option may be useful when "
+            "the CSS Selector can not select the exact text with the date. "
+            "This option can be safely omitted if this step is not "
+            "necessary, as the default regex select the complete input. "
+            "Notice that options --date-from-csss, --csss-date-regex, "
+            "and --csss-date-fmt work together as a pipeline, first "
+            "getting the text from elements in the page, then optionally "
+            "selecting a substring from it, and then parsing it as date "
+            "and time. "
+        ),
+    )
+
+    parser.add_argument(
+        "--csss-date-fmt",
+        action="store",
+        default=None,
+        metavar="DATE_FORMAT",
+        help=(
+            "The date format to be used with option --date-from-csss. "
+            "This value is a format string as specified by strftime(), and "
+            "*must* contain at least the formats for year, month and date. "
+            "Notice that options --date-from-csss, --csss-date-regex, and "
+            "--csss-date-fmt work together as a pipeline, first getting "
+            "the text from elements in the page, then optionally selecting "
+            "a substring from it, and then parsing it as date and time. If "
+            "this format is not given or empty, the code will try to "
+            "interpret it as some common date/time formats."
         ),
     )
 
