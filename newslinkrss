@@ -909,7 +909,7 @@ def main():
         "--log",
         action="store",
         type=str,
-        default=None,
+        default="WARNING",
         metavar="LOG_LEVEL",
         help=("Define a log level. Valid values are " + ", ".join(USER_LOG_LEVELS)),
     )
