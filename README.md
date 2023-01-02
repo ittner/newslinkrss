@@ -370,6 +370,56 @@ And then we have our fixed command line:
 ## More useful notes
 
 
+### Capturing publish dates
+
+The date when a particular item was published is one of the most useful pieces
+of information from a feed, so newslinkrss has several ways of getting it
+from source pages, with availability depending on the way it is used (i.e.
+with or without `--follow`) and the information avaialble in the HTML.
+Related options are the following:
+
+
+- If `--follow` is used, dates will be read automatically from standard
+  metadata (Open Graph, etc.) if they exists in the target page, no further
+  options are necessary;
+
+- Options `--date-from-text` and `--text-date-fmt` allow reading the date from
+  the anchor text (i.e., the text inside tag `<a>`) associated to a particular
+  entry in the index page; no `--follow` is necessary. The first option must
+  provide a regular expression with a single capture group for the date
+  (which allows removing non-date parts of the string) and the second option
+  should give the date format. If the format is not given, the code will try
+  some common date formats;
+
+- Options `--date-from-url` and `--url-date-fmt` allow reading the date from
+  the item link; this is specially interesting for sites that have URLs in
+  format "https://example.org/posts/2020/09/22/happy-hobbit-day/" but provide
+  no better source for a publish date. Again, no `--follow` is necessary. The
+  first option must provide a regular expression with a single capture group
+  with the date and the second option should give the date format. If the
+  format is not given, code will try some common date formats;
+
+- Options `--date-from-xpath`, `--xpath-date-regex`, and `--xpath-date-fmt`
+  allow reading dates from any element in the target page which can be found
+  with a XPath expression. Naturally, the target page which must be downloaded
+  with `--follow`; The XPath expression must return a string (from the inner
+  text or the attributes of an element), the second must optionally provide a
+  regular expression with a single capture group with the date, and the third
+  should give the date format. If no regex is given, all the string will be
+  used and if no date format is given, the code will try some common date
+  formats;
+
+- Options `--date-from-csss`, `--csss-date-regex`, and `--csss-date-fmt` work
+  in a similar way as the previous ones, but using CSS Selectors instead.
+  They are not as powerful or flexible as XPath, but simpler, cleaner, and
+  more suitable for HTML.
+
+
+These options are tried in this order with the first valid date being picked,
+so no date will be read from a CSS Selector if it was already sucessfuly read
+from the page metadata.
+
+
 ### Ignoring URLs
 
 The link pattern (-p) has a counterpart `--ignore-pattern` (shortcut `-i`)
