@@ -143,6 +143,7 @@ class CollectAttributesParser(HTMLParser):
     description - String with a best-guest for a description or None
     changed   - Datetime with a best-guest for the modification time or None
     author    - String with a best-guest for the author name or None
+    tags      - Tags attached to the article
     """
 
     def __init__(self):
@@ -155,6 +156,7 @@ class CollectAttributesParser(HTMLParser):
         self.canonical = None
         self.changed = None
         self.author = None
+        self.tags = []
 
     def handle_starttag(self, tag, attrs):
         if tag == "head":
@@ -223,6 +225,10 @@ class CollectAttributesParser(HTMLParser):
 
             if not self.author and (name == "author" or prop == "article:author"):
                 self.author = content
+
+            if name == "article:tag" or prop == "article:tag":
+                if content and content not in self.tags:
+                    self.tags.append(content)
 
     def handle_data(self, data):
         if self._title_lst is not None:
@@ -422,6 +428,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         author=attr_parser.author,
         description=description,
         guid=PyRSS2Gen.Guid(req.url),
+        categories=attr_parser.tags,
         pubDate=date,
     )
 
