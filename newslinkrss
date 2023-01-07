@@ -132,6 +132,25 @@ class CollectLinksParser(HTMLParser):
             self._last_link = False
 
 
+def normalize_rfc1766_lang_tag(loc):
+    """RSS2 and HTML use RFC 1766 language codes (with an "-"), while Open
+    Graph uses a "_". This function fixes this mess and normalizes cases,
+    spaces, etc.
+
+    Notice that RFC 1766 is not case-sensitive, capitalization is just a
+    convention. This function capitalizes country codes for easy reading.
+
+    Returns None for (some) nonsensical values.
+    """
+    loc = loc.strip().lower().replace("_", "-")
+    if len(loc) > 32:
+        return None
+    lst = loc.split("-", 1)
+    if len(lst) == 2 and len(lst[1]) == 2:
+        loc = lst[0] + "-" + lst[1].upper()
+    return loc
+
+
 class CollectAttributesParser(HTMLParser):
     """A state machine that parses HTML from a web page and extract some
     useful attributes.
@@ -145,6 +164,7 @@ class CollectAttributesParser(HTMLParser):
     author    - String with a best-guest for the author name or None
     section   - Section where article was published or None
     tags      - Tags attached to the article
+    language  - Language code (e.g. en-US) or None
     """
 
     def __init__(self):
@@ -159,8 +179,20 @@ class CollectAttributesParser(HTMLParser):
         self.author = None
         self.section = None
         self.tags = []
+        self.language = None
+
+        # True is a temporary language was found in element <html>. It will
+        # be used only until another one is found because too many sites
+        # have nonsensical values in it.
+        self._html_locale = False
 
     def handle_starttag(self, tag, attrs):
+        if tag == "html":
+            lang = _first_valid_attr_in_list(attrs, "lang")
+            if lang and not self.language:
+                self.language = normalize_rfc1766_lang_tag(lang)
+                self._html_locale = True
+
         if tag == "head":
             # Will fail on nested heads, but who is insane enough to do this?!
             self._in_head = True
@@ -234,6 +266,14 @@ class CollectAttributesParser(HTMLParser):
 
             if (name == "article:section" or prop == "article:section") and content:
                 self.section = content
+
+            if (name == "og:locale" or prop == "og:locale") and content:
+                lang = normalize_rfc1766_lang_tag(content)
+                if self._html_locale and self.language:
+                    self.language = lang
+                    self._html_locale = False
+                elif not self.language:
+                    self.language = lang
 
     def handle_data(self, data):
         if self._title_lst is not None:
@@ -617,6 +657,7 @@ def make_feed(args):
         or base_url,
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         lastBuildDate=datetime.datetime.now(datetime.timezone.utc),
+        language=base_attrs.language,
         items=rss_items,
     )
     write_feed(rss, args)
