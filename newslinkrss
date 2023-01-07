@@ -143,6 +143,7 @@ class CollectAttributesParser(HTMLParser):
     description - String with a best-guest for a description or None
     changed   - Datetime with a best-guest for the modification time or None
     author    - String with a best-guest for the author name or None
+    section   - Section where article was published or None
     tags      - Tags attached to the article
     """
 
@@ -156,6 +157,7 @@ class CollectAttributesParser(HTMLParser):
         self.canonical = None
         self.changed = None
         self.author = None
+        self.section = None
         self.tags = []
 
     def handle_starttag(self, tag, attrs):
@@ -229,6 +231,9 @@ class CollectAttributesParser(HTMLParser):
             if name == "article:tag" or prop == "article:tag":
                 if content and content not in self.tags:
                     self.tags.append(content)
+
+            if (name == "article:section" or prop == "article:section") and content:
+                self.section = content
 
     def handle_data(self, data):
         if self._title_lst is not None:
@@ -419,6 +424,13 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         except (lxml.etree.ParserError):
             logger.exception("When trying to get document body")
 
+    if attr_parser.tags:
+        categories = attr_parser.tags
+    elif attr_parser.section:
+        categories = [attr_parser.section]
+    else:
+        categories = None
+
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
@@ -428,7 +440,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         author=attr_parser.author,
         description=description,
         guid=PyRSS2Gen.Guid(req.url),
-        categories=attr_parser.tags,
+        categories=categories,
         pubDate=date,
     )
 
