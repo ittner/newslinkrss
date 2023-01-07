@@ -357,6 +357,8 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         req = session.get(url, timeout=args.http_timeout, stream=True)
         if req.url in used_urls:
             return None
+        if args.encoding:
+            req.encoding = args.encoding
         used_urls.add(req.url)
         chunk_size = 1024 * min(100, args.max_page_length)
         if req.status_code == 200:
@@ -599,6 +601,8 @@ def make_feed(args):
     req = None
     try:
         req = session.get(base_url, timeout=args.http_timeout, stream=True)
+        if args.encoding:
+            req.encoding = args.encoding
         chunk_size = 1024 * min(100, args.max_first_page_length)
         consumed_size = 0
         for chunk in req.iter_content(chunk_size=chunk_size, decode_unicode=True):
@@ -1171,6 +1175,17 @@ def main():
             "when following links (option --follow), see option "
             "--max-page-length"
         ),
+    )
+
+    parser.add_argument(
+        "--encoding",
+        action="store",
+        type=str,
+        metavar="CHARSET",
+        help="Use this explicit character encoding instead of detecting it "
+        "automatically. Usually only required for pages with incorrect "
+        "charset information which cause the feed to also be presented "
+        'in the wrong encoding (aka "mojibake").',
     )
 
     parser.add_argument(
