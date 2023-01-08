@@ -435,6 +435,15 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
                     break
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.ParserError):
             logger.exception("When handling a CSS selector")
+    if not date and "Last-Modified" in req.headers:
+        last_mod = req.headers["Last-Modified"]
+        date = dateutil.parser.parse(last_mod)
+        logger.debug(
+            "No date was found but an HTTP header 'Last-Modified' was. "
+            "Assuming its value %s as the date %s",
+            last_mod,
+            date,
+        )
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:

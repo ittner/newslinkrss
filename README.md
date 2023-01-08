@@ -412,8 +412,11 @@ Related options are the following:
 - Options `--date-from-csss`, `--csss-date-regex`, and `--csss-date-fmt` work
   in a similar way as the previous ones, but using CSS Selectors instead.
   They are not as powerful or flexible as XPath, but simpler, cleaner, and
-  more suitable for HTML.
+  more suitable for HTML;
 
+- If no date was found yet, but the HTTP request returned a "Last-Modified"
+  header, assumes it as the actual last modification date (even if the
+  server may be lying to us here).
 
 These options are tried in this order with the first valid date being picked,
 so no date will be read from a CSS Selector if it was already sucessfuly read
