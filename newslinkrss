@@ -303,7 +303,7 @@ def try_date_from_str(src, date_rx, date_fmt):
         else:
             # No date format, use dateutil's best guess.
             rdate = dateutil.parser.parse(date_txt)
-    except (AttributeError, IndexError, ValueError):
+    except (AttributeError, IndexError, ValueError, dateutil.parser.ParserError):
         logger.exception(
             "when parsing date with src=%s, fmt=%s, rx=%s", src, date_fmt, date_rx
         )
@@ -437,13 +437,16 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
             logger.exception("When handling a CSS selector")
     if not date and "Last-Modified" in req.headers:
         last_mod = req.headers["Last-Modified"]
-        date = dateutil.parser.parse(last_mod)
-        logger.debug(
-            "No date was found but an HTTP header 'Last-Modified' was. "
-            "Assuming its value %s as the date %s",
-            last_mod,
-            date,
-        )
+        try:
+            date = dateutil.parser.parse(last_mod)
+            logger.debug(
+                "No date was found but an HTTP header 'Last-Modified' was. "
+                "Assuming its value %s as the date %s",
+                last_mod,
+                date,
+            )
+        except dateutil.parser.ParserError:
+            logger.exception('Invalid date in HTTP header "Last-modified"')
 
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
