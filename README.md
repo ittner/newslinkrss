@@ -224,6 +224,55 @@ So, the updated syntax will be:
 And now we have our feed!
 
 
+### A single feed from multiple start URLs
+
+It is possible to have several start URLs and make newslinkrss generate a
+single feed with content gathered from all of them, all other options
+remaining the same. Typically, this can be used to filter only the sections
+of interest from a site while keeping all articles in the same subscription
+in your newsreader.
+
+Let's continue with our Reuters example, but imagine we only want articles
+from sections "World" and "Technology". We noticed before that the section
+names appears in the URL, so a first approach may be just hack the link
+pattern to require `(world|technology)` in it. However this solution may fail
+to grab, for example, some news articles that appears in the "technology"
+page but have a different section in their URLs (as they can be related to
+both) or skip articles that do not appear in the front page at all (as space
+there is limited).
+
+This can be solved with this command:
+
+    newslinkrss \
+        --follow \
+        -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+' \
+        --max-page-length 512 \
+        --with-body \
+        --body-xpath '//article' \
+        --require-dates \
+        --title-regex '(.+)\s+\|' \
+        --title "Reuters (Technology and World only)" \
+        https://www.reuters.com/technology/ https://www.reuters.com/world/
+
+Notice that it is almost the same command line used in the previous example,
+except for the multiple URLs and option `--title`, which allow us to give an
+alternate title to the feed. This is welcome because newslinkrss picks the
+title from the first URL that has one, and it may be related to the first
+section only (alternatively, you can rename the feed in your newsreader if
+it has an option for it).
+
+When using multiple start pages, a special attention is required to the
+parameter `--max-links`! If the limit is reached in a page, links loaded
+from later pages will be skipped.
+
+This feature may be also used to capture more items from sites that split
+them in very short pages but does still have stable pagination URLs, like:
+`https://news.example.org/page-1.html https://news.example.org/page-2.html
+https://news.example.org/page-3.html`.  If you are using newslinkrss in a
+shell script, you may avoid repeated URLs by using sequence expansions (in
+bash) or `seq -f` (in everything else).
+
+
 ### Gathering information from insufficient metadata
 
 Some sites do not provide standard (not even quasi-standard) metadata that

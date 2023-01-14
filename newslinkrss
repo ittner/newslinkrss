@@ -86,6 +86,12 @@ class CollectLinksParser(HTMLParser):
         self._grab_link_text = False
         self._last_link = None
 
+    def reset_parser(self):
+        """Resets the parser state, but still keeps found links, etc."""
+        self._last_link_text = None
+        self._grab_link_text = False
+        self._last_link = None
+
     def handle_starttag(self, tag, attrs):
         if (self.max_items is not None) and (len(self.links) >= self.max_items):
             if not self.limit_reached:
@@ -184,6 +190,12 @@ class CollectAttributesParser(HTMLParser):
         # True is a temporary language was found in element <html>. It will
         # be used only until another one is found because too many sites
         # have nonsensical values in it.
+        self._html_locale = False
+
+    def reset_parser(self):
+        """Reset current parser state, but keep collected data."""
+        self._title_lst = None
+        self._in_head = False
         self._html_locale = False
 
     def handle_starttag(self, tag, attrs):
@@ -563,7 +575,7 @@ def make_exception_feed(exc, args=None):
 
     rss = PyRSS2Gen.RSS2(
         title="Error: " + cmdline,
-        link=args.url if args else None,
+        link=args.urls[0] if args else None,
         description="Failed to generate feed.",
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         lastBuildDate=datetime.datetime.now(datetime.timezone.utc),
@@ -599,17 +611,9 @@ class EmptyCookieJar(http.cookiejar.CookieJar):
         return
 
 
-def make_feed(args):
+def get_start_page(args, session, base_attrs, link_grabber, base_url):
 
-    base_url = args.url
-    session = requests.Session()
-    session.headers = {
-        "User-Agent": args.user_agent,
-    }
-
-    if args.no_cookies:
-        session.cookies = EmptyCookieJar()
-
+    logger.info("Downloading start URL %s", base_url)
     page_content = ""
     req = None
     try:
@@ -627,20 +631,37 @@ def make_feed(args):
         if req:
             req.close()
 
-    # Get relevant attributes from base URL.
-    base_attrs = CollectAttributesParser()
+    base_attrs.reset_parser()
     base_attrs.feed(page_content)
 
-    # From now, we should use req.url because of redirects.
-    session.headers["Referer"] = req.url
-    request_base = base_attrs.base or req.url
-
-    # Grab any links of interest from the base URL.
-    link_grabber = CollectLinksParser(
-        args.link_pattern, args.ignore_pattern, args.max_links, request_base
-    )
+    link_grabber.reset_parser()
+    link_grabber.base_url = base_attrs.base or req.url
     link_grabber.feed(page_content)
-    base_links = link_grabber.links
+
+    return req
+
+
+def make_feed(args):
+
+    session = requests.Session()
+    session.headers = {
+        "User-Agent": args.user_agent,
+    }
+
+    if args.no_cookies:
+        session.cookies = EmptyCookieJar()
+
+    base_attrs = CollectAttributesParser()
+    link_grabber = CollectLinksParser(
+        args.link_pattern, args.ignore_pattern, args.max_links, None
+    )
+
+    for curr_url in args.urls:
+        req = get_start_page(args, session, base_attrs, link_grabber, curr_url)
+        if link_grabber.limit_reached:
+            break
+        if not "Referer" in session.headers:
+            session.headers["Referer"] = req.url
 
     if args.test:
         test_links(link_grabber, args)
@@ -648,6 +669,7 @@ def make_feed(args):
 
     # URLs that where already processed (considering redirects).
     used_urls = set()
+    base_links = link_grabber.links
 
     rss_items = []
     for itm in base_links:
@@ -662,16 +684,16 @@ def make_feed(args):
         if ret_item:
             rss_items.append(ret_item)
 
-    title = base_attrs.title or base_url
+    title = base_attrs.title or ", ".join(args.urls)
     title = title[: args.max_title_length]
 
     rss = PyRSS2Gen.RSS2(
         title=args.title or title,
-        link=base_url,
+        link=args.urls[0],
         description=base_attrs.description
         or base_attrs.title
         or base_attrs.canonical
-        or base_url,
+        or ", ".join(args.urls),
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         lastBuildDate=datetime.datetime.now(datetime.timezone.utc),
         language=base_attrs.language,
@@ -1181,8 +1203,8 @@ def main():
         type=int,
         help=(
             "Maximum amount of data, in kilobytes, to download from the "
-            "first page, i.e. the one which URL is given in command line to "
-            "start the process. This is important because the server can "
+            "first pages, i.e. the ones which URLs are given in command line "
+            "to start the process. This is important because the server can "
             "generate and infinite amount of data, redirect us to a "
             "DVD ISO or anything else. For limiting the pages downloaded "
             "when following links (option --follow), see option "
@@ -1250,7 +1272,11 @@ def main():
     )
 
     parser.add_argument(
-        "url", action="store", help="URL of the website to generate the feed"
+        "urls",
+        action="store",
+        nargs="+",
+        metavar="URL",
+        help="URL of the website to generate the feed.",
     )
 
     args = parser.parse_args()
