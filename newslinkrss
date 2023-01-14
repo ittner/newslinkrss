@@ -537,6 +537,7 @@ def write_feed(rss, args):
 
 
 def make_exception_feed(exc, args=None):
+    logger.warning("Writing exception information to an exception feed.")
     cmdline = " ".join(sys.argv)
     stack_trace = traceback.format_exc()
     msg = (
