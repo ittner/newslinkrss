@@ -223,6 +223,12 @@ So, the updated syntax will be:
 
 And now we have our feed!
 
+The body for this example is very simple but the selectors (both XPath and
+CSSS) are surprisingly powerful. They can return any number of elements in
+a given order, so you can create a readable item body from whatever exists
+in the source page by carefully picking elements in the right order (XPath
+operator "|" and CSSS "," are your friends!).
+
 
 ### A single feed from multiple start URLs
 

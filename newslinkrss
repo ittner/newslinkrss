@@ -357,6 +357,37 @@ def remove_unwanted_body_elements(args, body):
                     elem.getparent().remove(elem)
 
 
+def make_item_body(args, page_text, tree):
+    bodyhtml = None
+    try:
+        if tree is None:
+            # Evil premature optimization: perhaps we already parsed the
+            # document looking for dates.
+            tree = lxml.html.document_fromstring(page_text)
+
+        lst = None
+        if args.body_xpath:
+            lst = tree.xpath(args.body_xpath)
+        if (not lst) and args.body_csss:
+            lst = tree.cssselect(args.body_csss)
+        if not args.body_xpath and not args.body_csss:
+            lst = tree.xpath("/html/body/*")
+        if lst:
+            if len(lst) > 1:
+                body = lxml.html.Element("div")
+                body.extend(lst)
+            else:
+                body = lst[0]
+            remove_unwanted_body_elements(args, body)
+            cleaner = lxml.html.clean.Cleaner()
+            body = cleaner.clean_html(body)
+            bodyhtml = lxml.html.tostring(body, pretty_print=False, encoding="unicode")
+    except (lxml.etree.ParserError):
+        logger.exception("When trying to get document body")
+
+    return bodyhtml
+
+
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
 
     attr_parser = CollectAttributesParser()
@@ -466,29 +497,9 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         return None
 
     if args.with_body:
-        try:
-            if tree is None:
-                # Evil premature optimization: perhaps we already parsed the
-                # document looking for dates.
-                tree = lxml.html.document_fromstring(page_text)
-
-            res = None
-            if args.body_xpath:
-                res = tree.xpath(args.body_xpath)
-            if (not res or res[0] is None) and args.body_csss:
-                res = tree.cssselect(args.body_csss)
-            if not args.body_xpath and not args.body_csss:
-                res = tree.xpath("/html/body")
-            if res and res[0] is not None:
-                body = res[0]
-                remove_unwanted_body_elements(args, body)
-                cleaner = lxml.html.clean.Cleaner()
-                body = cleaner.clean_html(body)
-                description = lxml.html.tostring(
-                    body, pretty_print=False, encoding="unicode"
-                )
-        except (lxml.etree.ParserError):
-            logger.exception("When trying to get document body")
+        bodyhtml = make_item_body(args, page_text, tree)
+        if bodyhtml:
+            description = bodyhtml
 
     if attr_parser.tags:
         categories = attr_parser.tags
@@ -1068,9 +1079,9 @@ def main():
         default=None,
         metavar="XPATH_EXPRESSION",
         help=(
-            "A XPath expression selecting the HTML element to be included in "
-            "the body of the feed entry when option --with-body is used. By "
-            'default, newslinkrss will use the entire "body" HTML element, '
+            "A XPath expression selecting the HTML elements to be included "
+            "in the body of the feed entry when option --with-body is used. "
+            'By default, newslinkrss will use the entire "body" element, '
             "but sometimes a more restricted selection is welcome, for "
             "example, one that includes only the relevant text of a news "
             "article, leaving out menus, headers, related news, etc. "
@@ -1086,7 +1097,7 @@ def main():
         default=None,
         metavar="CSS_SELECTOR",
         help=(
-            "A CSS Selector to pick the HTML element to be included in the "
+            "A CSS Selector to pick the HTML elements to be included in the "
             "body of the feed entry when option --with-body is used. By "
             'default, newslinkrss will use the entire "body" HTML element, '
             "but sometimes a more restricted selection is welcome, for "
