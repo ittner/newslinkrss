@@ -393,12 +393,6 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
     will be tried according to availability.
     """
     date = None
-    if attr_parser and attr_parser.changed:
-        date = attr_parser.changed
-    if not date and args.date_from_text and anchor_text:
-        date = try_date_from_str(anchor_text, args.date_from_text, args.text_date_fmt)
-    if not date and args.date_from_url and orig_url:
-        date = try_date_from_str(orig_url, args.date_from_url, args.url_date_fmt)
     if not date and args.date_from_xpath and tree is not None:
         try:
             for res in tree.xpath(args.date_from_xpath):
@@ -424,6 +418,12 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
                     break
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
             logger.exception("When handling a CSS selector")
+    if not date and args.date_from_text and anchor_text:
+        date = try_date_from_str(anchor_text, args.date_from_text, args.text_date_fmt)
+    if not date and args.date_from_url and orig_url:
+        date = try_date_from_str(orig_url, args.date_from_url, args.url_date_fmt)
+    if not date and attr_parser and attr_parser.changed:
+        date = attr_parser.changed
     if not date and request and ("Last-Modified" in request.headers):
         last_mod = request.headers["Last-Modified"]
         try:
