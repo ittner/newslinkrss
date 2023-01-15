@@ -360,11 +360,6 @@ def remove_unwanted_body_elements(args, body):
 def make_item_body(args, page_text, tree):
     bodyhtml = None
     try:
-        if tree is None:
-            # Evil premature optimization: perhaps we already parsed the
-            # document looking for dates.
-            tree = lxml.html.document_fromstring(page_text)
-
         lst = None
         if args.body_xpath:
             lst = tree.xpath(args.body_xpath)
@@ -382,10 +377,66 @@ def make_item_body(args, page_text, tree):
             cleaner = lxml.html.clean.Cleaner()
             body = cleaner.clean_html(body)
             bodyhtml = lxml.html.tostring(body, pretty_print=False, encoding="unicode")
-    except (lxml.etree.ParserError):
+    except (
+        lxml.etree.ParserError,
+        cssselect.parser.SelectorSyntaxError,
+        lxml.etree.XPathEvalError,
+    ):
         logger.exception("When trying to get document body")
 
     return bodyhtml
+
+
+def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
+    """Try to get a meaningful last modification date for an item.
+    Only argument 'args' is required, everything else can be set to None and
+    will be tried according to availability.
+    """
+    date = None
+    if attr_parser and attr_parser.changed:
+        date = attr_parser.changed
+    if not date and args.date_from_text and anchor_text:
+        date = try_date_from_str(anchor_text, args.date_from_text, args.text_date_fmt)
+    if not date and args.date_from_url and orig_url:
+        date = try_date_from_str(orig_url, args.date_from_url, args.url_date_fmt)
+    if not date and args.date_from_xpath and tree is not None:
+        try:
+            for res in tree.xpath(args.date_from_xpath):
+                logger.debug("date-from-xpath found candidate text: '%s'", res)
+                date = try_date_from_str(
+                    res, args.xpath_date_regex, args.xpath_date_fmt
+                )
+                if date:
+                    logger.debug("Found date from XPath %s", date)
+                    break
+        except (lxml.etree.XPathEvalError):
+            pass
+    if not date and args.date_from_csss and tree is not None:
+        try:
+            for res in tree.cssselect(args.date_from_csss):
+                etext = res.text
+                logger.debug("date-from-csss found candidate text: '%s'", etext)
+                date = try_date_from_str(
+                    etext, args.csss_date_regex, args.csss_date_fmt
+                )
+                if date:
+                    logger.debug("Found date from CSS Selector %s", date)
+                    break
+        except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
+            logger.exception("When handling a CSS selector")
+    if not date and request and ("Last-Modified" in request.headers):
+        last_mod = request.headers["Last-Modified"]
+        try:
+            date = dateutil.parser.parse(last_mod)
+            logger.debug(
+                "No date was found but an HTTP header 'Last-Modified' was. "
+                "Assuming its value %s as the date %s",
+                last_mod,
+                date,
+            )
+        except dateutil.parser.ParserError:
+            logger.exception('Invalid date in HTTP header "Last-modified"')
+    return date
 
 
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
@@ -442,72 +493,29 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     description += "Link text: %s" % link_text
     item_url = attr_parser.canonical or req.url
 
-    # Try to get a meaningful last modification date.
-    date = None
-    if attr_parser.changed:
-        date = attr_parser.changed
-    if not date and args.date_from_text:
-        date = try_date_from_str(orig_title, args.date_from_text, args.text_date_fmt)
-    if not date and args.date_from_url:
-        date = try_date_from_str(item_url, args.date_from_url, args.url_date_fmt)
-    if not date and args.date_from_xpath:
-        try:
-            tree = lxml.html.document_fromstring(page_text)
-            for res in tree.xpath(args.date_from_xpath):
-                logger.debug("date-from-xpath found candidate text: '%s'", res)
-                date = try_date_from_str(
-                    res, args.xpath_date_regex, args.xpath_date_fmt
-                )
-                if date:
-                    logger.debug("Found date from XPath %s", date)
-                    break
-        except (lxml.etree.XPathEvalError, lxml.etree.ParserError):
-            pass
-    if not date and args.date_from_csss:
-        try:
-            if tree is None:
-                tree = lxml.html.document_fromstring(page_text)
-            for res in tree.cssselect(args.date_from_csss):
-                etext = res.text
-                logger.debug("date-from-csss found candidate text: '%s'", etext)
-                date = try_date_from_str(
-                    etext, args.csss_date_regex, args.csss_date_fmt
-                )
-                if date:
-                    logger.debug("Found date from CSS Selector %s", date)
-                    break
-        except (cssselect.parser.SelectorSyntaxError, lxml.etree.ParserError):
-            logger.exception("When handling a CSS selector")
-    if not date and "Last-Modified" in req.headers:
-        last_mod = req.headers["Last-Modified"]
-        try:
-            date = dateutil.parser.parse(last_mod)
-            logger.debug(
-                "No date was found but an HTTP header 'Last-Modified' was. "
-                "Assuming its value %s as the date %s",
-                last_mod,
-                date,
-            )
-        except dateutil.parser.ParserError:
-            logger.exception('Invalid date in HTTP header "Last-modified"')
+    tree = None
+    try:
+        tree = lxml.html.document_fromstring(page_text)
+    except (lxml.etree.ParserError):
+        logger.exception(
+            "Failed to parse document, some information won't be available"
+        )
 
-    # We need a date but the page have none. Skip this entry.
+    date = find_item_date(args, attr_parser, req, tree, link_text, item_url)
     if args.require_dates and not date:
+        # We need a date but the page have none. Skip this entry.
         logger.info("Ignoring feed entry without date %s", url)
         return None
-
-    if args.with_body:
+    if args.with_body and tree is not None:
         bodyhtml = make_item_body(args, page_text, tree)
         if bodyhtml:
             description = bodyhtml
-
     if attr_parser.tags:
         categories = attr_parser.tags
     elif attr_parser.section:
         categories = [attr_parser.section]
     else:
         categories = None
-
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
@@ -527,11 +535,7 @@ def make_feed_item_nofollow(url, used_urls, args, link_text, base_attrs):
         return None
     used_urls.add(url)
     clean_title = make_clean_title(args, link_text)
-    date = None
-    if args.date_from_text:
-        date = try_date_from_str(link_text, args.date_from_text, args.text_date_fmt)
-    if not date and args.date_from_url:
-        date = try_date_from_str(url, args.date_from_url, args.url_date_fmt)
+    date = find_item_date(args, None, None, None, link_text, url)
     # We need a date but the page have none. Skip this entry.
     if args.require_dates and not date:
         logger.info("Ignoring feed entry without date %s", url)
