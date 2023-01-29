@@ -26,6 +26,7 @@ import logging
 import traceback
 from html.parser import HTMLParser
 import http.cookiejar
+import urllib
 import urllib3
 
 import dateutil.parser
@@ -72,6 +73,35 @@ def _first_valid_attr_in_list(attrs, name):
     return None
 
 
+def clean_url_query_string(rx_list, url):
+    """Remove unwanted parameters from the URL query string.
+
+    If the URL has a query string, remove all name/value pairs which
+    names matches any of the regular expressions given in list 'rx_list'.
+    Return the URL, possibly modified.
+    """
+
+    if not rx_list:
+        return url
+
+    u = urllib.parse.urlparse(url)
+    query_lst = urllib.parse.parse_qsl(u.query, keep_blank_values=True)
+    for rx in rx_list:
+        nlst = []
+        for itm in query_lst:
+            if not re.match(rx, itm[0]):
+                nlst.append(itm)
+        query_lst = nlst
+
+    query_str = urllib.parse.urlencode(query_lst) if query_lst else None
+    new_url = urllib.parse.urlunparse(
+        (u.scheme, u.netloc, u.path, u.params, query_str, u.fragment)
+    )
+    if new_url != url:
+        logger.debug("query string cleanup: URL %s rewritten to %s", url, new_url)
+    return new_url
+
+
 class CollectLinksParser(HTMLParser):
     def __init__(self, url_patt=None, ignore_patt=None, max_items=None, base_url=None):
         HTMLParser.__init__(self)
@@ -81,6 +111,10 @@ class CollectLinksParser(HTMLParser):
         self.base_url = base_url
         self.links = []
         self.limit_reached = False
+
+        # List of regexes with parameters to strip from URL query strings.
+        self.qs_cleanup_rx_list = []
+
         self._found_links = set()
         self._last_link_text = None
         self._grab_link_text = False
@@ -107,6 +141,7 @@ class CollectLinksParser(HTMLParser):
             href = href.split("#", 2)[0]  # Strip URL fragment.
             if self.base_url:
                 href = requests.compat.urljoin(self.base_url, href)
+            href = clean_url_query_string(self.qs_cleanup_rx_list, href)
 
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
@@ -676,6 +711,7 @@ def make_feed(args):
     link_grabber = CollectLinksParser(
         args.link_pattern, args.ignore_pattern, args.max_links, None
     )
+    link_grabber.qs_cleanup_rx_list = args.qs_remove_param
 
     for curr_url in args.urls:
         req = get_start_page(args, session, base_attrs, link_grabber, curr_url)
@@ -1169,6 +1205,25 @@ def main():
             "equivalent, see --body-remove-xpath. For a simpler version, "
             "to only remove tags but preserve child elements, see "
             "--body-remove-tag."
+        ),
+    )
+
+    parser.add_argument(
+        "-Q",
+        "--qs-remove-param",
+        action="append",
+        type=str,
+        default=None,
+        metavar="REGEX",
+        help=(
+            "If a URL captured from the source page has a query string, "
+            "remove parameters with names matching the regular expression "
+            "given in this option. This allows striping tracking parameters "
+            "or detecting duplicate URLs that only differ by irrelevant "
+            "parameters. Notice that these are regular expressions matching "
+            "only against the *name* or the parameter and be aware of the "
+            "anchors required to match prefixes only, example: '^utm_.+' . "
+            "This option may be used several times if required."
         ),
     )
 

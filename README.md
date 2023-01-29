@@ -494,6 +494,19 @@ prevents that regular expression from becoming excessively complex and makes
 debugging easier.
 
 
+### Cleaning URL query strings
+
+Sometimes the source page has URLs with unwanted query string parameters,
+like the [UTM trackers](https://en.wikipedia.org/wiki/UTM_parameters), or
+multiple URLs differing only by irrelevant query string parameters and
+pointing to the same destination page (and therefore confusing the duplicate
+link detection). Option `--qs-remove-param` (shortcut `-Q`) may be used to
+fix this. If the name of a parameter matches the regular expression given in
+this option, that name/value pair will be removed from the URL query string.
+This option may be repeated many times if necessary. Example: `-Q '^utm.+'`
+(notice the anchor to only match a prefix).
+
+
 
 ### Excluding body elements
 
