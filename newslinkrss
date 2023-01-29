@@ -376,7 +376,12 @@ def make_item_body(args, page_text, tree):
             remove_unwanted_body_elements(args, body)
             cleaner = lxml.html.clean.Cleaner()
             body = cleaner.clean_html(body)
-            bodyhtml = lxml.html.tostring(body, pretty_print=False, encoding="unicode")
+            if isinstance(body, str):
+                bodyhtml = body
+            else:
+                bodyhtml = lxml.html.tostring(
+                    body, pretty_print=False, encoding="unicode"
+                )
     except (
         lxml.etree.ParserError,
         cssselect.parser.SelectorSyntaxError,
