@@ -34,7 +34,7 @@ social media!) while giving away privacy and submitting ourselves to tracking
 and personal data collection in exchange for timelines algorithmically
 optimized to improve "engagement" with advertisers.
 
-I'm still resisting and wrote lots of feed scrapers/filters in the last 12 or
+I'm still resisting and wrote lots of feed scrapers/filters in the last 18 or
 so years; newslinkrss is one that replaced several of these ad-hoc filters by
 centralizing some very common pieces of code and it is polished enough to be
 published.
