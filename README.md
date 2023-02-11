@@ -491,7 +491,8 @@ sections, or other unwanted content from the feed, without support from the
 feed reader and without counting to the total URL limit (`-n`). While it is
 possible to add this ignore rule to the link pattern itself, using `-i`
 prevents that regular expression from becoming excessively complex and makes
-debugging easier.
+debugging easier. This option can be used multiple times, a URL that match
+any of them will be ignored.
 
 
 ### Cleaning URL query strings

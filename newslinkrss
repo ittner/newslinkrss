@@ -145,14 +145,19 @@ class CollectLinksParser(HTMLParser):
 
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
-            if (
-                href not in self._found_links
-                and (not self.url_patt or re.match(self.url_patt, href))
-                and (not self.ignore_patt or not re.match(self.ignore_patt, href))
-            ):
+            if href not in self._found_links and self.test_url_patterns(href):
                 self._last_link_text = []
                 self._grab_link_text = True
                 self._last_link = href
+
+    def test_url_patterns(self, url):
+        """Return True if url is valid for visiting (i.e. matches at least one
+        accept pattern and do not match any ignore pattern.
+        """
+
+        if self.ignore_patt and any(re.match(patt, url) for patt in self.ignore_patt):
+            return False
+        return not self.url_patt or any(re.match(patt, url) for patt in self.url_patt)
 
     def handle_data(self, data):
         if self._grab_link_text:
@@ -793,19 +798,21 @@ def main():
     parser.add_argument(
         "-p",
         "--link-pattern",
-        action="store",
-        default=".+",
+        action="append",
+        default=None,
         metavar="REGEX",
         help=(
             "A regular expression to filter the URLs of links that the "
-            "script will follow or capture to generate every feed item."
+            "script will follow or capture to generate every feed item. "
+            "This option can be used multiple times, a URL matching any "
+            "expression will be accepted."
         ),
     )
 
     parser.add_argument(
         "-i",
         "--ignore-pattern",
-        action="store",
+        action="append",
         default=None,
         metavar="REGEX",
         help=(
@@ -813,7 +820,9 @@ def main():
             "--link-pattern. This may be used to prevent unwanted items "
             "from appearing in the feed while keeping the link pattern "
             "simpler (i.e. no need to make that regex excessively complex "
-            "by embedding the ignored patterns in it)."
+            "by embedding the ignored patterns in it). This option can be "
+            "used multiple times, a URL matching any expression will be "
+            "ignored."
         ),
     )
 
@@ -1354,6 +1363,9 @@ def main():
 
     args = parser.parse_args()
     set_log_level(args)
+
+    logger.debug("URL accept pattern: %s" % str(args.link_pattern))
+    logger.debug("URL ignore pattern: %s" % str(args.ignore_pattern))
 
     try:
         make_feed(args)
