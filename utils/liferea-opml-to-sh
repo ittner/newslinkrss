@@ -1,0 +1,141 @@
+#!/usr/bin/env python
+
+#
+# newslinkrss - RSS feed generator for generic sites
+# Copyright (C) 2020-2023  Alexandre Erwin Ittner <alexandre@ittner.com.br>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+
+"""
+Test script to parse a Liferea OPML feed list and print a shell script that
+will run all the newslinkrss entries, optionally replacing the script version
+and logging options and saving their output to files. This is mostly intended
+to check if changes to newslinkrss do not break my existing command lines.
+"""
+
+import argparse
+import os.path
+import re
+import shlex
+import sys
+import unicodedata
+from lxml import etree
+
+
+def make_fname(title):
+    # Ugly way to remove diacritics while keeping the base character.
+    ret = "".join(
+        c
+        for c in unicodedata.normalize("NFD", title)
+        if unicodedata.category(c) != "Mn"
+    )
+
+    ret = re.sub("[^a-zA-Z0-9.,_ ()-]", "_", ret)
+    ret = re.sub("_+", "_", ret)
+    ret += ".rss"
+
+    return ret
+
+
+def print_element(args, elem):
+    cmdline = elem.attrib["xmlUrl"][1:]
+    cmdlist = shlex.split(cmdline)
+
+    if "newslinkrss" not in cmdlist[0]:
+        # Not a call to newslinkrss
+        return
+
+    print("\n\n")
+    print("# title: " + elem.attrib["title"].replace("\n", ""))
+    print("# original: " + cmdline.replace("\n", ""))
+    print("")
+
+    if args.replace_script:
+        cmdlist[0] = args.replace_script
+
+    if args.log:
+        cmdlist += ["--log", args.log]
+
+    cmdlist.append("-o")
+    if args.no_output:
+        cmdlist.append("/dev/null")
+    else:
+        cmdlist.append(make_fname(elem.attrib["title"]))
+
+    print(shlex.join(cmdlist))
+
+
+def parse_opml(args):
+    with open(args.path) as fp:
+        tree = etree.parse(fp)
+
+    print("#!/bin/sh")
+    for elem in tree.xpath('//outline[@type="rss" and @xmlUrl]'):
+        if elem.attrib["xmlUrl"].startswith("|"):
+            print_element(args, elem)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=(__doc__),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--log",
+        action="store",
+        type=str,
+        default=None,
+        metavar="LOG_LEVEL",
+        help="Add a --log switch to all newslinkrss calls setting the logger "
+        "output to this level.",
+    )
+
+    parser.add_argument(
+        "-r",
+        "--replace-script",
+        action="store",
+        type=str,
+        default=None,
+        metavar="NEWSLINKRSS_PATH",
+        help="Replace newslinkrss path in command lines with this one. "
+        "Useful for using a development version instead.",
+    )
+
+    parser.add_argument(
+        "-q",
+        "--no-output",
+        action="store_true",
+        default=False,
+        help="Instruct newslinkrss to do not save output to files, sending "
+        "it to /dev/null instead.",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--path",
+        action="store",
+        metavar="OPML_PATH",
+        default=os.path.expanduser("~/.config/liferea/feedlist.opml"),
+        help="Path to the source OPML file.",
+    )
+
+    args = parser.parse_args()
+    parse_opml(args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
