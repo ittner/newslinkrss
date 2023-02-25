@@ -76,8 +76,8 @@ def _first_valid_attr_in_list(attrs, name):
 def clean_url_query_string(rx_list, url):
     """Remove unwanted parameters from the URL query string.
 
-    If the URL has a query string, remove all name/value pairs which
-    names matches any of the regular expressions given in list 'rx_list'.
+    If the URL has a query string, remove all name/value pairs with names
+    matching any of the regular expressions given in list 'rx_list'.
     Return the URL, possibly modified.
     """
 
