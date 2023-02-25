@@ -272,19 +272,18 @@ class CollectAttributesParser(HTMLParser):
                 name = name.lower()
             if prop:
                 prop = prop.lower()
+            # Many sites just mix "name" and "property".
+            name_or_prop = name or prop
 
             # Attributes defined by the Open Graph Protocol: A lot of sites
             # which refuse to provide feeds have this nice attributes so their
             # contents appear nicely when linked on Facebook, Twitter and so.
             # These can provide a lot of useful information.
 
-            if (
-                prop == "article:published_time"
-                or prop == "article:modified_time"
-                or prop == "og:updated_time"
-                or name == "article:published_time"
-                or name == "article:modified_time"
-                or name == "og:updated_time"
+            if name_or_prop in (
+                "article:published_time",
+                "article:modified_time",
+                "og:updated_time",
             ):
                 # Content is a date in ISO format.
                 # <meta property="article:published_time" content="2020-09-13T20:00:00+00:00" />
@@ -301,25 +300,23 @@ class CollectAttributesParser(HTMLParser):
                 # <meta property="og:url" content="xxxxx">
                 self.canonical = content
 
-            if prop in ("og:description", "twitter:description") or (
-                name == "description"
-            ):
+            if name_or_prop in ("og:description", "twitter:description", "description"):
                 if len(content) > 8 and (
                     (not self.description) or (len(content) > len(self.description))
                 ):
                     self.description = content
 
-            if not self.author and (name == "author" or prop == "article:author"):
+            if not self.author and name_or_prop in ("author", "article:author"):
                 self.author = content
 
-            if name == "article:tag" or prop == "article:tag":
+            if name_or_prop == "article:tag":
                 if content and content not in self.tags:
                     self.tags.append(content)
 
-            if (name == "article:section" or prop == "article:section") and content:
+            if (name_or_prop == "article:section") and content:
                 self.section = content
 
-            if (name == "og:locale" or prop == "og:locale") and content:
+            if (name_or_prop == "og:locale") and content:
                 lang = normalize_rfc1766_lang_tag(content)
                 if self._html_locale and self.language:
                     self.language = lang
