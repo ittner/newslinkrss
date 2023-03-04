@@ -451,6 +451,8 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
         try:
             for res in tree.cssselect(args.date_from_csss):
                 etext = res.text
+                if etext is None:
+                    continue
                 logger.debug("date-from-csss found candidate text: '%s'", etext)
                 date = try_date_from_str(
                     etext, args.csss_date_regex, args.csss_date_fmt
