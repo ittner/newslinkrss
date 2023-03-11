@@ -82,8 +82,11 @@ installed correctly.
 # Usage examples
 
 newslinkrss is lacking a lot of documentation, but the following examples
-can show a bit of what it can and can not do. A complete list of options
-can be read by typing `newslinkrss --help`.
+can show a bit of what it can and can not do. To make understanding easier,
+examples uses mostly the long, verbose, form of some options even when
+abbreviations are available. A complete list of options, abbreviations,
+default values, etc. can be read by typing `newslinkrss --help`.
+
 
 
 ### Simplest case
@@ -112,7 +115,7 @@ captures the title of the page as the title of the feed entry, keeps the
 summary from anchor text, and loads author information and the page
 publishing and update dates and times from the page metadata (**if** this
 information is available in some common format, like
-[Open Graph](https://ogp.me/) or Twitter cards.
+[Open Graph](https://ogp.me/ ) or Twitter cards.
 
 Reuters [killed](https://news.ycombinator.com/item?id=23576022) its RSS feeds
 in mid 2020, so let's take them as an example and use newslinkrss to bring
@@ -323,11 +326,6 @@ The resulting command line is:
         --http-timeout 4 \
         'https://revistaquestaodeciencia.com.br/'
 
-To make understanding easier, this example uses the long, verbose, form of
-some options even when abbreviations are available. For the same reason, some
-of the options are set to the default values and are not strictly required
-but they are listed anyway. See `newslinkrss --help` for details.
-
 
 ### Using complex XPath expressions
 
@@ -374,7 +372,7 @@ helper function to get what the expression will return, for example:
 
 ### The first example, revisited
 
-Now that we have a few extra tricks on our sleeves we can check back that
+Now that we have a few extra tricks in our sleeves we can check back that
 very first example and fix some of its limitations:
 
 - First, we need the correct publish dates; they are neither in the URL nor
@@ -438,10 +436,10 @@ Related options are the following:
   page which can be found with a XPath expression. Naturally, the target page
   which must be downloaded with `--follow`; The XPath expression must return
   a string (from the inner text or the attributes of an element), the second
-  must optionally provide a regular expression with a single capture group
-  with the date, and the third should give the date format. If no regex is
-  given, all the string will be used and if no date format is given, the code
-  will try some common date formats;
+  is optional, but if given it must provide a regular expression with a single
+  capture group with the date, and the third should give the date format. If
+  no regex is given, all the string will be used and if no date format is
+  given, the code will try some common date formats;
 
 - If explicitly used, options `--date-from-csss`, `--csss-date-regex`, and
   `--csss-date-fmt` work in a similar way as the previous ones, but using
@@ -480,7 +478,6 @@ If no date options are listed, or if could not grab a date from the document,
 standard metadata and HTTP headers will be used (in this order).
 
 
-
 ### Ignoring URLs
 
 The link pattern (-p) has a counterpart `--ignore-pattern` (shortcut `-i`)
@@ -505,8 +502,7 @@ link detection). Option `--qs-remove-param` (shortcut `-Q`) may be used to
 fix this. If the name of a parameter matches the regular expression given in
 this option, that name/value pair will be removed from the URL query string.
 This option may be repeated many times if necessary. Example: `-Q '^utm.+'`
-(notice the anchor to only match a prefix).
-
+(notice the anchor to only match prefixes).
 
 
 ### Excluding body elements
@@ -524,7 +520,7 @@ newslinkrss has tree command line options for this:
 - Option `--body-remove-tag` (shortcut `-R`) will remove all occurrences of
   the given tag from the feed body and move their child elements to their
   parents. This can be used to remove formatting while preserving the inner
-  text (e.g. `-R strong`) or to remove images from the body (with `-R  img`,
+  text (e.g. `-R strong`) or to remove images from the body (with `-R img`,
   as "img" elements have no children);
 
 - Option `--body-remove-xpath` (shortcut `-X`) will remove the elements
@@ -538,7 +534,6 @@ newslinkrss has tree command line options for this:
 
 All three options can be repeated in the command line how many times as
 necessary to express all required rules.
-
 
 
 ### Testing links
