@@ -1,11 +1,11 @@
 # About
 
 newslinkrss generates RSS feeds from websites that do not provide their own.
-This is done by loading a given URL and collecting links that matches a
-pattern, given as a regular expression, to gather the relevant information,
-optionally visiting them to get more details and even processing the target
-pages with XPath and CSS Selectors if required. It basically works as a
-purpose specific crawler or scraper.
+This is done by loading URLs and collecting links that matches patterns,
+given as a regular expression, to gather the relevant information, optionally
+visiting them to get more details and even processing the target pages with
+XPath and CSS Selectors if required. It basically works as a purpose specific
+crawler or scraper.
 
 The results are printed as a RSS feed to stdout or, optionally, to a file. The
 simplest way to use it is just configure your **local** feed reader, like
@@ -73,7 +73,6 @@ development versions easier. In this case, just do:
     . my-venv/bin/activate
     pip install -U .
 
-
 newslinkrss depends on a few libraries, this will ensure all them are also
 installed correctly.
 
@@ -137,8 +136,8 @@ the feed back to life and right into our news readers. Our criteria will be:
   anything that does not look like a news article on the spot. So, a good
   pattern will be `'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'`;
 
-- newslinkrss deduplicates URLs automatically, so we don't need to worry if we
-  end up capturing the same link twice;
+- newslinkrss deduplicates URLs automatically, so we don't need to worry if
+  we end up capturing the same link twice;
 
 - Target pages have Open Graph meta tags, so by just following them we can
   get accurate publish dates and times with no extra effort. Better yet, as
@@ -150,7 +149,7 @@ the feed back to life and right into our news readers. Our criteria will be:
 - All page titles are something like "The actual headline | Reuters". This
   format is nice for a website but not so for feed items: the "| Reuters"
   part is not only redundant (the feed title already tells us about the
-  source of the article) but also noise, as it makes scanning through the
+  source of the article) but also noisy, as it makes scanning through the
   headlines harder. newslinkrss has an option `--title-regex` for exactly
   this use case of cleaning up redundant text from titles. It accepts a
   regular expression with a single capture group; if the expression matches,
@@ -195,11 +194,11 @@ read everything in the news aggregator itself. A good item body should be
 mostly static and clean HTML (so no scripts, interactive content, aggressive
 formatting, etc.) leaving everything else to the aggregator to handle.
 
-Let's extend the previous example from Reuters website: as we are already
-following and downloading the links, there is no much extra work to
-generate the full feed from it. Option `--with-body` will copy the entire
-contents of the "body" element from the page into the feed, just removing a
-few obviously unwanted tags (scripts, forms, etc.).
+So let's extend the previous example from Reuters website: as we are already
+following and downloading the links, there is no much extra work to generate
+the full feed from it. Option `--with-body` will copy the entire contents of
+the "body" element from the page into the feed, just removing a few obviously
+unwanted tags (scripts, forms, etc.).
 
 Including the entire body works for every case, but for this site we can
 filter a bit more and pick only actual text of the news article, ignoring
@@ -376,19 +375,23 @@ Now that we have a few extra tricks in our sleeves we can check back that
 very first example and fix some of its limitations:
 
 - First, we need the correct publish dates; they are neither in the URL nor
-  in the anchor text, so we need to `--follow` the pages and get them from
-  there. The pages also have no metadata for that, but there is a publish
-  date intended for human readers there in this slice of HTML:
-  `<small class="text-muted"><b>23/12/2022</b> - some random text</small>`
-  The important part if that we can use a XPath expression to select that
-  date and then parse it; a good (not optimal! It does not follow CSS rules)
-  would be `--date-from-xpath '//small[@class="text-muted"]/b/text()'` and
-  it will capture the "23/12/2022" from the text node of the inner "b"
-  element, no need to filter it through `--xpath-date-regex` to remove
-  unwanted text, so we can then parse it with `--xpath-date-fmt '%d/%m/%Y'`;
+  in the anchor text, so we need to `--follow` the pages and get the dates
+  from there. The pages also have no metadata for that, but they have a
+  publish date intended for human readers in a slice of HTML like this:
+  `<small class="text-muted"><b>23/12/2022</b> - some random text</small>`.
+  We can use a XPath expression to select the date from element "b", a good
+  one (but technically incorrect as it does not follow CSS rules for attribute
+  "class") is `--date-from-xpath '//small[@class="text-muted"]/b/text()'` .
+  It is a bit convoluted but we can replace it with a CSS Selector (and also
+  fix the class attribute issue): `--date-from-csss 'small.text-muted > b'`.
+  It will capture the "23/12/2022" from the text node of inner element "b",
+  no need to filter through `--csss-date-regex` to remove unwanted text, but
+  as the date format is still ambiguous, we need to give an explicit format
+  with option `--csss-date-fmt '%d/%m/%Y'`;
 
-- Let's be extra careful with the URL patterns, so we don't follow a
-  random link going to another domain;
+- Let's be extra careful with the URL pattern and never capture (or follow!)
+  links pointing to nother domains. We can replace it with a more restricted
+  `-p 'https://www.jaraguadosul.sc.gov.br/news/.+'`;
 
 - As we are already following the pages, let's also generate a full feed.
   The relevant part of the articles are inside a "div" element with
@@ -399,7 +402,7 @@ very first example and fix some of its limitations:
   correct text). We can isolate this element with a XPath expression
   `'//div[@id="area_impressao"]'` but this is slightly more complex than
   the equivalent CSS Selector `div#area_impressao` and, as we already used
-  XPath in several examples, let's use a CSSS this time;
+  XPath in several other examples, let's stick with CSSS;
 
 - That site can be a bit slow sometimes, so let's be extra tolerant and
   increase the HTTP timeout to 10 s;
@@ -412,8 +415,8 @@ And then we have our fixed command line:
         --follow \
         --with-body \
         --body-csss 'div#area_impressao' \
-        --date-from-xpath '//small[@class="text-muted"]/b/text()' \
-        --xpath-date-fmt '%d/%m/%Y' \
+        --date-from-csss 'small.text-muted > b' \
+        --csss-date-fmt '%d/%m/%Y' \
         https://www.jaraguadosul.sc.gov.br/noticias.php
 
 ... not perfect, but it gives us a very practical and usable feed!
@@ -446,7 +449,7 @@ Related options are the following:
   CSS Selectors instead. They are not as powerful or flexible as XPath, but
   simpler, cleaner, and more suitable for HTML;
 
-- If explicitly used,  options `--date-from-text` and `--text-date-fmt` allow
+- If explicitly used, options `--date-from-text` and `--text-date-fmt` allow
   reading the date from the anchor text (i.e., the text inside tag `<a>`)
   associated to a particular entry in the index page; no `--follow` is
   necessary. The first option must provide a regular expression with a single
