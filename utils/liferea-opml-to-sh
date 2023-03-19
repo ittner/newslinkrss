@@ -69,13 +69,20 @@ def print_element(args, elem):
     if args.log:
         cmdlist += ["--log", args.log]
 
+    fname = "/dev/null"
+    if not args.no_output:
+        fname = make_fname(elem.attrib["title"])
     cmdlist.append("-o")
-    if args.no_output:
-        cmdlist.append("/dev/null")
-    else:
-        cmdlist.append(make_fname(elem.attrib["title"]))
+    cmdlist.append(fname)
 
     print(shlex.join(cmdlist))
+    if not args.no_output:
+        print("""
+RET=$?
+if [ "$RET" -ne "0" ]; then
+    echo "$RET" > '%s.error'
+fi""" % fname)
+
 
 
 def parse_opml(args):
