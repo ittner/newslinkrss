@@ -20,6 +20,7 @@
 
 import sys
 import re
+import os
 import datetime
 import argparse
 import logging
@@ -180,8 +181,8 @@ class CollectLinksParser(HTMLParser):
 
 def normalize_rfc1766_lang_tag(loc):
     """RSS2 and HTML use RFC 1766 language codes (with an "-"), while Open
-    Graph uses a "_". This function fixes this mess and normalizes cases,
-    spaces, etc.
+    Graph and "LANG" environment variable use a "_". This function fixes
+    this difference and normalizes cases, spaces, etc.
 
     Notice that RFC 1766 is not case-sensitive, capitalization is just a
     convention. This function capitalizes country codes for easy reading.
@@ -705,6 +706,35 @@ def get_start_page(args, session, base_attrs, link_grabber, base_url):
     return req
 
 
+def make_accept_language_header(args):
+    """Build a acceptable Accept-Language HTTP header."""
+    langs = []
+    if args.lang:
+        for lang in args.lang:
+            normalized = normalize_rfc1766_lang_tag(lang)
+            langs.append(normalized if normalized else lang)
+
+    if not langs:
+        locale = os.getenv("LANG")
+        if locale:
+            locale = locale.split(".")[0]
+            normalized = normalize_rfc1766_lang_tag(locale)
+            if normalized:
+                langs.append(normalized)
+
+    q = 0.8
+    qualified = []
+    for lang in langs:
+        qualified.append("%s;q=%.01f" % (lang, q))
+        if q > 0.3:
+            q -= 0.2
+
+    if qualified:
+        return ",".join(qualified)
+    else:
+        return None
+
+
 def make_feed(args):
     session = requests.Session()
     session.headers = {
@@ -721,6 +751,10 @@ def make_feed(args):
 
     if args.no_cookies:
         session.cookies = EmptyCookieJar()
+
+    accept_language = make_accept_language_header(args)
+    if accept_language:
+        session.headers["Accept-Language"] = accept_language
 
     base_attrs = CollectAttributesParser()
     link_grabber = CollectLinksParser(
@@ -1321,6 +1355,25 @@ def main():
         "automatically. Usually only required for pages with incorrect "
         "charset information which cause the feed to also be presented "
         'in the wrong encoding (aka "mojibake").',
+    )
+
+    parser.add_argument(
+        "--lang",
+        action="append",
+        type=str,
+        default=None,
+        metavar="LANGUAGE_CODE",
+        help=(
+            "Ask the site to return the content in this particular language, "
+            "if available. Languages must be specified in ISO 639 or RFC 1766 "
+            "codes (e.g. en, en-US, pt-BR, de-DE). This option may be used "
+            "several times if required and the order in which the options "
+            "are given will be the preference order of the languages. If no "
+            "option is given and environment variable LANG is set, "
+            "newslinkrss will try to get a language code from it. Internally, "
+            "this sets the HTTP Accept-Language header to the prescribed "
+            "value(s)."
+        ),
     )
 
     parser.add_argument(
