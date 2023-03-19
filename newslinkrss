@@ -302,8 +302,12 @@ class CollectAttributesParser(HTMLParser):
                 self.canonical = content
 
             if name_or_prop in ("og:description", "twitter:description", "description"):
-                if len(content) > 8 and (
-                    (not self.description) or (len(content) > len(self.description))
+                if (
+                    content
+                    and len(content) > 8
+                    and (
+                        (not self.description) or (len(content) > len(self.description))
+                    )
                 ):
                     self.description = content
 
