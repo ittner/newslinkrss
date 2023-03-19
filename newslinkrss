@@ -712,6 +712,10 @@ def make_feed(args):
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate",
         "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
         "TE": "trailers",
     }
 
@@ -730,6 +734,11 @@ def make_feed(args):
             break
         if not "Referer" in session.headers:
             session.headers["Referer"] = req.url
+
+    # Handle fetch metadata headers according to
+    # https://w3c.github.io/webappsec-fetch-metadata/
+    if "Sec-Fetch-Site" in session.headers:
+        session.headers["Sec-Fetch-Site"] = "same-origin"
 
     if args.test:
         test_links(link_grabber, args)
