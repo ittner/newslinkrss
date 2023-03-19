@@ -709,6 +709,10 @@ def make_feed(args):
     session = requests.Session()
     session.headers = {
         "User-Agent": args.user_agent,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate",
+        "Upgrade-Insecure-Requests": "1",
+        "TE": "trailers",
     }
 
     if args.no_cookies:
