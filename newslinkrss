@@ -739,9 +739,8 @@ def make_accept_language_header(args):
         return None
 
 
-def make_feed(args):
-    session = requests.Session()
-    session.headers = {
+def make_default_http_headers(args):
+    headers = {
         "User-Agent": args.user_agent,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate",
@@ -753,18 +752,25 @@ def make_feed(args):
         "TE": "trailers",
     }
 
-    if args.no_cookies:
-        session.cookies = EmptyCookieJar()
-
     accept_language = make_accept_language_header(args)
     if accept_language:
-        session.headers["Accept-Language"] = accept_language
+        headers["Accept-Language"] = accept_language
 
     if args.header:
         for header_value in args.header:
             pair = header_value.split(":", 1)
             value = pair[1].lstrip() if len(pair) == 2 else ""
-            session.headers[pair[0].strip()] = value
+            headers[pair[0].strip()] = value
+
+    return headers
+
+
+def make_feed(args):
+    session = requests.Session()
+    session.headers = make_default_http_headers(args)
+
+    if args.no_cookies:
+        session.cookies = EmptyCookieJar()
 
     base_attrs = CollectAttributesParser()
     link_grabber = CollectLinksParser(
