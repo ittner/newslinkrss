@@ -539,6 +539,32 @@ All three options can be repeated in the command line how many times as
 necessary to express all required rules.
 
 
+### Handling request language options
+
+Some sites change their rendering, response language, **date formats**, etc.
+according to the preferred language information sent by the user's browser.
+By default, newslinkrss uses the "LANG" environment variable to set this
+language information (it is a bit of an optimization for the most common
+case where the system language is the same as the one of the browser used for
+debugging the options for a particular feed). To set a different one, you may
+overwrite the LANG variable or use option `--lang`. The later option is more
+flexible as it may be repeated to set several languages in order of preference
+(e.g. `"--lang pt-BR --lang en-US --lang de-DE"`).
+
+To not send any preferred language information to the server, independently
+of one currently set for the system, clear the LANG variable for the
+newslinkrss process invocation (e.g. `"LANG='' newslinkrss <other options>"`).
+
+
+### Setting arbitrary HTTP headers
+
+Some sites my require unusual request options to work correctly. newslinkrss
+has an option `--header` (shortcut: `-H`) to set any HTTP header for the
+requests it sends. To use it, just pass the header in format `"NAME: VALUE"`
+(e.g. `--header 'X-Clacks-Overhead: GNU Terry Pratchett'`). This should not
+be a common requirement, however.
+
+
 ### Testing links
 
 newslinkrss has an option `--test` that will skip the feed generation step
