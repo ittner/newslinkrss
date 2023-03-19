@@ -492,6 +492,9 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     try:
         logger.info("Following URL %s", url)
         req = session.get(url, timeout=args.http_timeout, stream=True)
+        logger.debug("Request returned status code: %d", req.status_code)
+        logger.debug("Request headers: %s", req.request.headers)
+        logger.debug("Response headers: %s", req.headers)
         if req.url in used_urls:
             return None
         if args.encoding:
@@ -676,6 +679,9 @@ def get_start_page(args, session, base_attrs, link_grabber, base_url):
     req = None
     try:
         req = session.get(base_url, timeout=args.http_timeout, stream=True)
+        logger.debug("Request returned status code: %d", req.status_code)
+        logger.debug("Request headers: %s", req.request.headers)
+        logger.debug("Response headers: %s", req.headers)
         if args.encoding:
             req.encoding = args.encoding
         chunk_size = 1024 * min(100, args.max_first_page_length)
