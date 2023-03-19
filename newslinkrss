@@ -760,6 +760,12 @@ def make_feed(args):
     if accept_language:
         session.headers["Accept-Language"] = accept_language
 
+    if args.header:
+        for header_value in args.header:
+            pair = header_value.split(":", 1)
+            value = pair[1].lstrip() if len(pair) == 2 else ""
+            session.headers[pair[0].strip()] = value
+
     base_attrs = CollectAttributesParser()
     link_grabber = CollectLinksParser(
         args.link_pattern, args.ignore_pattern, args.max_links, None
@@ -1377,6 +1383,22 @@ def main():
             "newslinkrss will try to get a language code from it. Internally, "
             "this sets the HTTP Accept-Language header to the prescribed "
             "value(s)."
+        ),
+    )
+
+    parser.add_argument(
+        "-H",
+        "--header",
+        action="append",
+        type=str,
+        default=None,
+        metavar="HTTP_HEADER",
+        help=(
+            "Add an arbitrary HTTP header to all requests send to the "
+            "destination server. Headers must be specified in format "
+            '"Name: Value" and will be passed to destination almost verbatim, '
+            "with only basic whitespace stripping. This option may be "
+            "repeated as many times as necessary."
         ),
     )
 
