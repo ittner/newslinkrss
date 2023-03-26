@@ -27,6 +27,7 @@ import logging
 import traceback
 from html.parser import HTMLParser
 import http.cookiejar
+import http.cookies
 import urllib
 import urllib3
 
@@ -500,6 +501,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         logger.debug("Request returned status code: %d", req.status_code)
         logger.debug("Request headers: %s", req.request.headers)
         logger.debug("Response headers: %s", req.headers)
+        logger.debug("Cookies: %s", session.cookies)
         if req.url in used_urls:
             return None
         if args.encoding:
@@ -670,14 +672,6 @@ def test_links(link_grabber, args):
         print("")
 
 
-class EmptyCookieJar(http.cookiejar.CookieJar):
-    """A cookie jar that ignores all cookies."""
-
-    def set_cookie(self, cookie, *args, **kwargs):
-        """Method to "set" a cookie.  Actually ignores it."""
-        return
-
-
 def get_start_page(args, session, base_attrs, link_grabber, base_url):
     logger.info("Downloading start URL %s", base_url)
     page_content = ""
@@ -765,12 +759,40 @@ def make_default_http_headers(args):
     return headers
 
 
+class ControlledCookiePolicy(http.cookiejar.DefaultCookiePolicy):
+    """A cookie policy with a simple read-only/read-write switch."""
+
+    def __init__(self):
+        self.read_only = False
+        http.cookiejar.DefaultCookiePolicy.__init__(self)
+
+    def set_ok(self, cookie, request):
+        if self.read_only:
+            return False
+        return http.cookiejar.DefaultCookiePolicy.set_ok(self, cookie, request)
+
+
+def set_cookie_options_for_session(session, args):
+    """Set the cookie options for the session."""
+
+    policy = ControlledCookiePolicy()
+    session.cookies = requests.cookies.RequestsCookieJar(policy=policy)
+
+    if args.cookie:
+        policy.read_only = False
+        for cookie_spec in args.cookie:
+            c = http.cookies.SimpleCookie(cookie_spec)
+            logger.debug("New custom cookie parsed as %s", repr(c))
+            for key, value in c.items():
+                session.cookies[key] = value
+
+    policy.read_only = bool(args.no_cookies)
+
+
 def make_feed(args):
     session = requests.Session()
     session.headers = make_default_http_headers(args)
-
-    if args.no_cookies:
-        session.cookies = EmptyCookieJar()
+    set_cookie_options_for_session(session, args)
 
     base_attrs = CollectAttributesParser()
     link_grabber = CollectLinksParser(
@@ -1389,6 +1411,27 @@ def main():
             "newslinkrss will try to get a language code from it. Internally, "
             "this sets the HTTP Accept-Language header to the prescribed "
             "value(s)."
+        ),
+    )
+
+    parser.add_argument(
+        "--cookie",
+        action="append",
+        type=str,
+        default=None,
+        metavar="COOKIE_DEFINITION",
+        help=(
+            "Add an arbitrary HTTP cookie to all requests sent to the server. "
+            "These cookies may be overwritten by cookies set by the server "
+            "and then the new ones will be sent in subsequent requests (if "
+            "--follow is used). These explicitly requested cookies are sent "
+            "even if option --no-cookies is used but, in this case, the "
+            "server will not be able to change or replace them. "
+            "The cookie definition is the same used for the Set-Cookie HTTP "
+            "header as defined in RFC 2965 and can be pretty complex. The "
+            "simplest form (NAME=VALUE) can be used ofr the majority of "
+            "cases, however. "
+            "This option may be repeated as many times as necessary."
         ),
     )
 

@@ -556,13 +556,40 @@ of one currently set for the system, clear the LANG variable for the
 newslinkrss process invocation (e.g. `"LANG='' newslinkrss <other options>"`).
 
 
+### Managing cookies
+
+newslinkrss persists cookies among requests from the same program invocation
+and forgets them once the program finishes; this is usually the most practical
+choice for typical use cases, but there is an option `--no-cookies` to disable
+all cookies if it becomes a problem for a particular source.
+
+Conversely, sites may expect a particular cookies to be set to a specific
+values, for example, to show news from a particular geographic region.
+Command line option `--cookie` allows the user to define customized cookies
+to handle these cases. This option supports the complete syntax defined by
+[RFC 2965](https://www.rfc-editor.org/rfc/rfc2965.html), but a simple
+`name=value` will work for the majority of use cases. Example:
+`--cookie 'cookie-banner-consent-accepted=false'`. This option can be
+repeated as many times as necessary.
+
+If user-defined cookies are used together with option `--no-cookies`, the
+target site will have access to them, but will not be able to change or
+delete them (by overwriting or redefining the expiry date) or set new ones.
+This results in a read-only set of cookie jar that can be very useful for
+sites that require cookies but use them to change behavior in unwanted ways
+after some number of pages are read.
+
+
 ### Setting arbitrary HTTP headers
 
 Some sites my require unusual request options to work correctly. newslinkrss
 has an option `--header` (shortcut: `-H`) to set any HTTP header for the
 requests it sends. To use it, just pass the header in format `"NAME: VALUE"`
 (e.g. `--header 'X-Clacks-Overhead: GNU Terry Pratchett'`). This should not
-be a common requirement, however.
+be a common requirement, however. It is also not recommended to use this
+option for handling language preferences and cookies, as the dedicated
+options `--lang` and `--cookie` will take care of the specific behavior of
+these headers.
 
 
 ### Testing links
