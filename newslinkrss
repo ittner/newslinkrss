@@ -1510,8 +1510,8 @@ def main():
     args = parser.parse_args()
     set_log_level(args)
 
-    logger.debug("URL accept pattern: %s" % str(args.link_pattern))
-    logger.debug("URL ignore pattern: %s" % str(args.ignore_pattern))
+    logger.debug("URL accept pattern: %s", args.link_pattern)
+    logger.debug("URL ignore pattern: %s", args.ignore_pattern)
 
     try:
         make_feed(args)
