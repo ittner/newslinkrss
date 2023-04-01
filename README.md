@@ -330,16 +330,17 @@ for it. Looking into the site we find that:
 
 The resulting command line is:
 
-    newslinkrss -p '.+/\d{4}/\d{2}/\d{2}/.+' \
+    newslinkrss \
+        -p 'https://revistaquestaodeciencia.com.br/.*\d{4}/\d{2}/\d{2}/.+' \
         --date-from-url '.*/(\d{4}/\d{2}/\d{2})/.*' \
         --url-date-fmt '%Y/%m/%d' \
         --follow \
         --with-body \
         --body-xpath "//article" \
         --author-from-csss 'a[href^="/autor/"]' \
-        --max-links 50 \
         --max-page-length 512 \
         --http-timeout 4 \
+        --title-regex '(.+)\s+\|' \
         'https://revistaquestaodeciencia.com.br/'
 
 
@@ -407,7 +408,7 @@ very first example and fix some of its limitations:
   with option `--csss-date-fmt '%d/%m/%Y'`;
 
 - Let's be extra careful with the URL pattern and never capture (or follow!)
-  links pointing to nother domains. We can replace it with a more restricted
+  links pointing to other domains. We can replace it with a more restricted
   `-p 'https://www.jaraguadosul.sc.gov.br/news/.+'`;
 
 - As we are already following the pages, let's also generate a full feed.
