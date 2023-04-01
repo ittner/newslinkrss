@@ -366,15 +366,27 @@ def try_date_from_str(src, date_rx, date_fmt):
     return rdate
 
 
-def make_clean_title(args, title):
-    if args.title_regex:
-        m = re.match(args.title_regex, title)
+def get_regex_first_group(regex, srcstr):
+    """If a regex with one capture group is given and it matches the source
+    string, returns this group. Otherwise, returns None. This is used for a
+    few "clean up" filters through the code.
+
+    regex: regular expression string or None
+    srcstr: source string or None
+    """
+    if regex and srcstr:
+        m = re.match(regex, srcstr)
         if m:
             try:
-                title = m[1]
+                return m[1]
             except IndexError:
                 pass
-    return title[: args.max_title_length]
+    return None
+
+
+def make_clean_title(args, title):
+    clean_title = get_regex_first_group(args.title_regex, title) or title
+    return clean_title[: args.max_title_length]
 
 
 def remove_unwanted_body_elements(args, body):
@@ -489,6 +501,35 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
     return date
 
 
+def find_item_author(args, attr_parser, tree):
+    """Try to get the author of an item.
+
+    Finds the author from explicitly requested elements and falls back to
+    metadata if these are not available.
+    """
+    author = None
+    if not author and args.author_from_xpath and tree is not None:
+        try:
+            for res in tree.xpath(args.author_from_xpath):
+                if res:
+                    author = get_regex_first_group(args.xpath_author_regex, str(res))
+                    break
+        except lxml.etree.XPathEvalError:
+            logger.exception("When trying to find author from XPath")
+
+    if not author and args.author_from_csss and tree is not None:
+        try:
+            for res in tree.cssselect(args.author_from_csss):
+                if res.text is not None:
+                    author = get_regex_first_group(
+                        args.csss_author_regex, str(res.text)
+                    )
+                    break
+        except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
+            logger.exception("When trying to find author from a CSS selector")
+    return author or attr_parser.author
+
+
 def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     attr_parser = CollectAttributesParser()
     description = ""
@@ -573,10 +614,11 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
+    author = find_item_author(args, attr_parser, tree)
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=item_url,
-        author=attr_parser.author,
+        author=author,
         description=description,
         guid=PyRSS2Gen.Guid(req.url),
         categories=categories,
@@ -1154,6 +1196,66 @@ def main():
             "a substring from it, and then parsing it as date and time. If "
             "this format is not given or empty, the code will try to "
             "interpret it as some common date/time formats."
+        ),
+    )
+
+    parser.add_argument(
+        "--author-from-xpath",
+        action="store",
+        default=None,
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "Use a XPath expression to get the author of an item, allowing to "
+            "find authors from any element in the page, which is particularly "
+            "useful for sites that do not cite them in the standard metadata. "
+            "Notice that options --author-from-xpath and --xpath-author-regex "
+            "work together as a pipeline, first getting the author name "
+            "from the page and the second filtering optionally selecting a "
+            "substring from it."
+        ),
+    )
+
+    parser.add_argument(
+        "--xpath-author-regex",
+        action="store",
+        default="(.+)",
+        metavar="REGEX",
+        help=(
+            "A regular expression containing a single capture group that "
+            "will be used to select the part of the text returned by "
+            "--author-from-xpath and use it as the author name. Example: "
+            "'by\\s+(.+)' will remove the 'by ' prefix from a byline, "
+            "returning only the name."
+        ),
+    )
+
+    parser.add_argument(
+        "--author-from-csss",
+        action="store",
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=(
+            "Use a CSS Selector to get the author of an item, allowing to "
+            "find authors from any element in the page, which is particularly "
+            "useful for sites that do not cite them in the standard metadata. "
+            "Notice that options --author-from-csss and --csss-author-regex "
+            "work together as a pipeline, first getting the author name "
+            "from the page and the second filtering optionally selecting a "
+            "substring from it."
+        ),
+    )
+
+    parser.add_argument(
+        "--csss-author-regex",
+        action="store",
+        default="(.+)",
+        metavar="REGEX",
+        help=(
+            "A regular expression containing a single capture group that "
+            "will be used to select the part of the text returned by "
+            "--author-from-csss and use it as the author name. Example: "
+            "'by\\s+(.+)' will remove the 'by ' prefix from a byline, "
+            "returning only the name."
         ),
     )
 

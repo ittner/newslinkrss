@@ -312,6 +312,22 @@ for it. Looking into the site we find that:
   generate a complete feed. The full text of the article is in an "article"
   element, so we can use `--body-xpath "//article"` here too.
 
+- The target page has no author information in its metadata so newslinkrss
+  will not be able to find their names automatically. However, it has a link
+  to the list of articles from the same author in format
+  `<a href="/autor/xxxxxxxx">Author Name</a>` and we can use the prefix
+  from attribute `href` to pick it with XPath (using option
+  `--author-from-xpath`) or CSS Selectors (with `--author-from-csss`). The
+  CSS approach is simpler for this particular case, so let's use an
+  `--author-from-csss 'a[href^="/autor/"]'`. While not required for this
+  site (name is the only child element of "a"), some sites may prefix the
+  author name with a "by "; For these cases, we could also use options
+  `--csss-author-regex` and `--xpath-author-regex` to select only the name
+  with a regular expression. Also notice that author is an optional element
+  in both RSS and Atom, but it is nice to have it appearing in the correct
+  fields in the news reader so we can use this information for filtering
+  reading lists, for example.
+
 The resulting command line is:
 
     newslinkrss -p '.+/\d{4}/\d{2}/\d{2}/.+' \
@@ -320,6 +336,7 @@ The resulting command line is:
         --follow \
         --with-body \
         --body-xpath "//article" \
+        --author-from-csss 'a[href^="/autor/"]' \
         --max-links 50 \
         --max-page-length 512 \
         --http-timeout 4 \
