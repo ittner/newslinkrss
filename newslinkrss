@@ -558,6 +558,9 @@ def do_session_http_get(session, url, timeout=2, max_len_kb=0, encoding=None):
                 if consumed_size >= 1024 * max_len_kb:
                     break
                 consumed_size += len(chunk)
+                if type(chunk) == bytes:
+                    logger.warning("Unexpected binary return, trying to fix.")
+                    chunk = chunk.decode("utf-8")
                 page_text += chunk
     except (
         urllib3.exceptions.ReadTimeoutError,
