@@ -622,6 +622,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         # We need a date but the page have none. Skip this entry.
         logger.info("Ignoring feed entry without date %s", url)
         return None
+    author = find_item_author(args, attr_parser, tree)
     if args.with_body and tree is not None:
         bodyhtml = make_item_body(args, page_text, tree)
         if bodyhtml:
@@ -635,7 +636,6 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
-    author = find_item_author(args, attr_parser, tree)
     return PyRSS2Gen.RSSItem(
         title=clean_title,
         link=item_url,
