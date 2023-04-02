@@ -530,48 +530,68 @@ def find_item_author(args, attr_parser, tree):
     return author or attr_parser.author
 
 
-def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
-    attr_parser = CollectAttributesParser()
-    description = ""
+def do_session_http_get(session, url, timeout=2, max_len_kb=0, encoding=None):
+    """Do a HTTP(S) GET request for the URL in the context of session,
+    subjected to the limits imposed for timeout (in seconds), max_len_kb
+    (in kilobytes) and using the given encoding to return the resulting page
+    as a *text* string.
+
+    Returns the text and the request object. For exceptions, the text will be
+    None and more error information must be inferred from the request object.
+    """
+    page_text = None
     req = None
-    page_text = ""
-    tree = None
     try:
         logger.info("Following URL %s", url)
-        req = session.get(url, timeout=args.http_timeout, stream=True)
+        req = session.get(url, timeout=timeout, stream=True)
         logger.debug("Request returned status code: %d", req.status_code)
         logger.debug("Request headers: %s", req.request.headers)
         logger.debug("Response headers: %s", req.headers)
         logger.debug("Cookies: %s", session.cookies)
-        if req.url in used_urls:
-            return None
-        if args.encoding:
-            req.encoding = args.encoding
-        used_urls.add(req.url)
-        chunk_size = 1024 * min(100, args.max_page_length)
+        if encoding:
+            req.encoding = encoding
+        chunk_size = 1024 * min(100, max_len_kb)
         if req.status_code == 200:
+            page_text = ""
             consumed_size = 0
             for chunk in req.iter_content(chunk_size=chunk_size, decode_unicode=True):
-                if consumed_size >= 1024 * args.max_page_length:
+                if consumed_size >= 1024 * max_len_kb:
                     break
                 consumed_size += len(chunk)
-                attr_parser.feed(chunk)
                 page_text += chunk
-        else:
-            description += "Page returned status code %d<br/>" % req.status_code
     except (
         urllib3.exceptions.ReadTimeoutError,
         requests.exceptions.Timeout,
     ):
         logger.exception("When downloading %s", url)
         # We should handle this somehow.
-        return None
+        page_text = None
     finally:
         if req:
             req.close()
+    return page_text, req
 
+
+def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
+    page_text, req = do_session_http_get(
+        session, url, args.http_timeout, args.max_page_length, args.encoding
+    )
+    if not page_text:
+        return None
+    if req.url in used_urls:
+        return None
+
+    used_urls.add(req.url)
+    attr_parser = CollectAttributesParser()
+    description = ""
+    if req.status_code == 200:
+        attr_parser.feed(page_text)
+    else:
+        description += "Page returned status code %d<br/>" % req.status_code
     if attr_parser.description:
         description = attr_parser.description
+    else:
+        description = link_text
 
     # Give a meaningful title for this entry.
     orig_title = attr_parser.title or link_text or attr_parser.canonical or req.url
@@ -585,9 +605,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         description += "Original title: %s<br/>" % orig_title
         clean_title = link_text[: args.max_title_length]
 
-    description += "Link text: %s" % link_text
     item_url = attr_parser.canonical or req.url
-
     tree = None
     try:
         tree = lxml.html.document_fromstring(page_text)
@@ -716,25 +734,9 @@ def test_links(link_grabber, args):
 
 def get_start_page(args, session, base_attrs, link_grabber, base_url):
     logger.info("Downloading start URL %s", base_url)
-    page_content = ""
-    req = None
-    try:
-        req = session.get(base_url, timeout=args.http_timeout, stream=True)
-        logger.debug("Request returned status code: %d", req.status_code)
-        logger.debug("Request headers: %s", req.request.headers)
-        logger.debug("Response headers: %s", req.headers)
-        if args.encoding:
-            req.encoding = args.encoding
-        chunk_size = 1024 * min(100, args.max_first_page_length)
-        consumed_size = 0
-        for chunk in req.iter_content(chunk_size=chunk_size, decode_unicode=True):
-            if consumed_size >= 1024 * args.max_first_page_length:
-                break
-            consumed_size += len(chunk)
-            page_content += chunk
-    finally:
-        if req:
-            req.close()
+    page_content, req = do_session_http_get(
+        session, base_url, args.http_timeout, args.max_first_page_length, args.encoding
+    )
 
     base_attrs.reset_parser()
     base_attrs.feed(page_content)
