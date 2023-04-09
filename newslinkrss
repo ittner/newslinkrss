@@ -24,6 +24,7 @@ import os
 import datetime
 import copy
 import argparse
+import locale
 import logging
 import traceback
 from html.parser import HTMLParser
@@ -900,6 +901,28 @@ def make_feed(args):
     write_feed(rss, args)
 
 
+def set_locale(args):
+    """Set locale for this application, using both the default "best effort"
+    approach and the explicit locale from command line.
+    """
+
+    if args.locale:
+        locale.setlocale(locale.LC_TIME, args.locale)
+        return
+
+    loc = None
+    candidates = ["LC_ALL", "LC_TIME", "LANG"]
+    for cand in candidates:
+        loc = os.getenv(cand)
+        if loc:
+            break
+    if loc:
+        try:
+            locale.setlocale(locale.LC_TIME, loc)
+        except locale.Error:
+            logger.warning("Ignoring wrong/unknown locale %s", loc)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -1583,6 +1606,22 @@ def main():
     )
 
     parser.add_argument(
+        "--locale",
+        action="store",
+        type=str,
+        default=None,
+        help=(
+            "Use this locale for parsing dates and times. By default, "
+            "newslinkrss will use the locale from environment variables and "
+            "ignore any failure. If this option is used, it will use the "
+            "given locale and abort in the event of a failure (e.g. locale "
+            "not available). If you want to keep the default best-effort "
+            "strategy for a non-default locale, set LC_ALL for newslinkrss "
+            "(i.e. call with 'LC_ALL=pt_BR.UTF-8 newslinkrss <options>')."
+        ),
+    )
+
+    parser.add_argument(
         "-E",
         "--no-exception-feed",
         action="store_true",
@@ -1618,6 +1657,7 @@ def main():
 
     args = parser.parse_args()
     set_log_level(args)
+    set_locale(args)
 
     logger.debug("URL accept pattern: %s", args.link_pattern)
     logger.debug("URL ignore pattern: %s", args.ignore_pattern)

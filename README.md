@@ -499,6 +499,21 @@ If no date options are listed, or if could not grab a date from the document,
 standard metadata and HTTP headers will be used (in this order).
 
 
+#### Locale-dependent dates
+
+Some date formats depend on the system locale, most common cases being month
+names (tokens `%b` and `%B`), and the date parsing options will also depend
+on it to interpret these dates correctly. By default, newslinkrss will use
+the locale set for the current user, read from environment variables, and
+ignore any failure if it is not available or is invalid. Option `--locale`
+allows setting an explicit locale name, so newslinkrss will use it or abort
+in the event of a failure. If you want to keep the default best-effort
+approach for a non-default locale, set environment variable LC_ALL when
+caling newslinkrss (i.e. call with
+`"LC_ALL=pt_BR.UTF-8 newslinkrss <options>"`).
+
+
+
 ### Ignoring URLs
 
 The link pattern (-p) has a counterpart `--ignore-pattern` (shortcut `-i`)
