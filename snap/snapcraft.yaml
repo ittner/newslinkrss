@@ -2,7 +2,7 @@ name: newslinkrss
 base: core20
 summary: Generate RSS feeds for sites that do not have them
 license: GPL-3.0+
-contact: Alexandre Erwin Ittner <alexandre@ittner.com.br>
+contact: https://github.com/ittner/newslinkrss
 description: |
   newslinkrss generates RSS feeds from websites that do not provide their own.
   This is done by loading URLs and collecting links that matches patterns,
