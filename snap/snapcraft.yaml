@@ -1,0 +1,58 @@
+name: newslinkrss
+base: core20
+summary: Generate RSS feeds for sites that do not have them
+license: GPL-3.0+
+contact: Alexandre Erwin Ittner <alexandre@ittner.com.br>
+description: |
+  newslinkrss generates RSS feeds from websites that do not provide their own.
+  This is done by loading URLs and collecting links that matches patterns,
+  given as a regular expression, to gather the relevant information, optionally
+  visiting them to get more details and even processing the target pages with
+  XPath and CSS Selectors if required. It basically works as a purpose specific
+  crawler or scraper.
+
+  The results are printed as a RSS feed to stdout or, optionally, to a file. The
+  simplest way to use it is just configure your **local** feed reader, like
+  Liferea or Newsboat, to use a "command" source and pass the correct command
+  line arguments to generate a suitable feed -- this allows you to centralize the
+  configuration in the reader itself and let it handle update times, etc.
+
+  Run `newslinkrss --help` for the complete list of command line options.
+confinement: strict
+adopt-info: newslinkrss
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+  - build-on: armhf
+  - build-on: ppc64el
+apps:
+  newslinkrss:
+    command: bin/newslinkrss
+    plugs:
+      - network
+      - home
+layout:
+  /usr/lib/locale:
+    bind: $SNAP/usr/lib/locale
+parts:
+  newslinkrss:
+    plugin: python
+    source: .
+    override-pull: |
+      snapcraftctl pull
+      VERSION="$(git describe --tags | sed 's/^v//')"
+      GRADE=stable
+      (echo -n "${VERSION}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' -) || GRADE=devel
+      echo "Version is ${VERSION}, grade is ${GRADE}"
+      snapcraftctl set-version "${VERSION}"
+      snapcraftctl set-grade "${GRADE}"
+    stage-packages:
+      - libicu66
+      - libxml2
+      - libxslt1.1
+      - locales-all
+    build-packages:
+      - git
+      - build-essential
+      - libxml2-dev
+      - libxslt-dev
