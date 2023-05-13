@@ -4,18 +4,19 @@ summary: Generate RSS feeds for sites that do not have them
 license: GPL-3.0+
 contact: https://github.com/ittner/newslinkrss
 description: |
-  newslinkrss generates RSS feeds from websites that do not provide their own.
-  This is done by loading URLs and collecting links that matches patterns,
-  given as a regular expression, to gather the relevant information, optionally
-  visiting them to get more details and even processing the target pages with
-  XPath and CSS Selectors if required. It basically works as a purpose specific
-  crawler or scraper.
+  newslinkrss generates RSS feeds for websites that do not provide their own.
+  This is done by loading URLs and collecting links that matches patterns to
+  the of feed items, given as regular expressions, and optionally visiting them
+  to get more details and even processing the target pages with XPath and CSS
+  Selectors if required. It basically works as a purpose specific crawler or
+  scraper.
 
-  The results are printed as a RSS feed to stdout or, optionally, to a file. The
+  The results are printed as a RSS feed to stdout or optionally to a file. The
   simplest way to use it is just configure your **local** feed reader, like
-  Liferea or Newsboat, to use a "command" source and pass the correct command
-  line arguments to generate a suitable feed -- this allows you to centralize the
-  configuration in the reader itself and let it handle update times, etc.
+  [Liferea](https://lzone.de/liferea/) or [Newsboat](https://newsboat.org/), to
+  use a "command" source and pass the correct command line arguments to generate
+  a suitable feed -- this allows you to centralize the configuration in the
+  reader itself and let it handle update times, etc.
 
   Run `newslinkrss --help` for the complete list of command line options.
 confinement: strict

@@ -1,13 +1,13 @@
 # About
 
-newslinkrss generates RSS feeds from websites that do not provide their own.
-This is done by loading URLs and collecting links that matches patterns,
-given as a regular expression, to gather the relevant information, optionally
-visiting them to get more details and even processing the target pages with
-XPath and CSS Selectors if required. It basically works as a purpose specific
-crawler or scraper.
+newslinkrss generates RSS feeds for websites that do not provide their own.
+This is done by loading URLs and collecting links that matches patterns to
+the of feed items, given as regular expressions, and optionally visiting them
+to get more details and even processing the target pages with XPath and CSS
+Selectors if required. It basically works as a purpose specific crawler or
+scraper.
 
-The results are printed as a RSS feed to stdout or, optionally, to a file. The
+The results are printed as a RSS feed to stdout or optionally to a file. The
 simplest way to use it is just configure your **local** feed reader, like
 [Liferea](https://lzone.de/liferea/) or [Newsboat](https://newsboat.org/), to
 use a "command" source and pass the correct command line arguments to generate
@@ -75,6 +75,22 @@ development versions easier. In this case, just do:
 
 newslinkrss depends on a few libraries, this will ensure all them are also
 installed correctly.
+
+
+## Installing from the Snap
+
+newslinkrss is also available as [a Snap](https://snapcraft.io/newslinkrss).
+This makes easy to always have the latest version, updated automatically, and
+do not requires creating Python virtual environments or touching user or
+system level Python modules. To install in any Snap-enabled distribution, run:
+
+    sudo snap install newslinkrss
+
+This will install and follow to the latest stable version; if you want to
+always have the latest development version, freshly built from the Git master
+branch, install it from the "edge" channel with:
+
+    sudo snap install newslinkrss --edge
 
 
 

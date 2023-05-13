@@ -926,13 +926,13 @@ def set_locale(args):
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "newslinkrss generates RSS feeds from websites that do not "
-            "provide their own. This is done by loading a given URL and "
-            "collecting links that matches a pattern, given as a regular "
-            "expression, to gather the relevant information, optionally "
-            "visiting them to get more details and even processing the "
-            "target pages with XPath and CSS Selectors if required. "
-            "It basically works as a purpose specific crawler or scraper."
+            "newslinkrss generates RSS feeds for websites that do not "
+            "provide their own. This is done by loading URLs and collecting "
+            "links that matches patterns to the of feed items, given as "
+            "regular expressions, and optionally visiting them to get more "
+            "details and even processing the target pages with XPath and CSS "
+            "Selectors if required. It basically works as a purpose specific "
+            "crawler or scraper."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
