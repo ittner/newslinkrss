@@ -450,6 +450,30 @@ def make_item_body(args, page_text, tree):
     return bodyhtml
 
 
+def find_item_title(args, attr_parser, request, tree, anchor_text, base_attrs):
+    title = None
+    if not title and args.title_from_xpath and tree is not None:
+        try:
+            for res in tree.xpath(args.title_from_xpath):
+                if res:
+                    title = str(res)
+                    break
+        except lxml.etree.XPathEvalError:
+            logger.exception("When trying to find title from XPath")
+    if not title and args.title_from_csss and tree is not None:
+        try:
+            for res in tree.cssselect(args.title_from_csss):
+                etext = res.text
+                if etext:
+                    title = str(etext)
+                    break
+        except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
+            logger.exception("When trying to find title from CSS selector")
+    if not title:
+        title = attr_parser.title or anchor_text or attr_parser.canonical or request.url
+    return make_clean_title(args, title)
+
+
 def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
     """Try to get a meaningful last modification date for an item.
     Only argument 'args' is required, everything else can be set to None and
@@ -599,18 +623,6 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
     else:
         description = link_text
 
-    # Give a meaningful title for this entry.
-    orig_title = attr_parser.title or link_text or attr_parser.canonical or req.url
-    clean_title = make_clean_title(args, orig_title)
-    if clean_title == base_attrs.title:
-        # The title is the same as the one from base url, a typical thing
-        # from horribly-designed news pages (and also happens on a
-        # government site I need to consult from time to time), so
-        # replace it with the contents of the link text, which should
-        # give a bit more useful information for the reader.
-        description += "Original title: %s<br/>" % orig_title
-        clean_title = link_text[: args.max_title_length]
-
     item_url = attr_parser.canonical or req.url
     tree = None
     try:
@@ -620,6 +632,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
             "Failed to parse document, some information won't be available"
         )
 
+    title = find_item_title(args, attr_parser, req, tree, link_text, base_attrs)
     date = find_item_date(args, attr_parser, req, tree, link_text, item_url)
     if args.require_dates and not date:
         # We need a date but the page have none. Skip this entry.
@@ -640,7 +653,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
     return PyRSS2Gen.RSSItem(
-        title=clean_title,
+        title=title,
         link=item_url,
         author=author,
         description=description,
@@ -1012,6 +1025,36 @@ def main():
             "group and, if it matches, the content of the first group will "
             "be used as the title. If it does not match, the original title "
             "will be used."
+        ),
+    )
+
+    parser.add_argument(
+        "--title-from-xpath",
+        action="store",
+        default=None,
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "Capture the title from the element given by this XPath "
+            "expression in the target document instead of using the usual "
+            "document title. This may be useful for sites where the title is "
+            "too polluted but there is an alternate element with a "
+            "descriptive title readily available. This requires the document "
+            "body, so it will only work if used with option --follow."
+        ),
+    )
+
+    parser.add_argument(
+        "--title-from-csss",
+        action="store",
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=(
+            "Capture the title from the element given by this CSS Selector "
+            "in the target document instead of using the usual document "
+            "title. This may be useful for sites where the title is too "
+            "polluted but there is an alternate element with a descriptive "
+            "title readily available. This requires the document body, so "
+            "it will only work if used with option --follow."
         ),
     )
 

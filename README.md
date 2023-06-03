@@ -459,13 +459,51 @@ And then we have our fixed command line:
 
 ## More useful notes
 
+### Capturing good titles
+
+The title of an item is one of the most important attributes you can get from
+a feed, as you probably will choose between continue reading or not based on
+it. newslinkrss has some strategies for finding a good title even if the
+source site has some very bad design choices.
+
+If you are not following the target pages (i.e. not using option `--follow`),
+the only title available will be the anchor text. If following, newslinkrss
+will, by default, use the target document title with a fall back to the
+anchor text or description for pages that do not have titles.
+
+Some sites have titles that are just too polluted but also have an alternate
+element with a descriptive text which can be used in its place. For these
+cases, newslinkrss has options `--title-from-xpath` and `--title-from-csss`.
+Both have the same effect but the former selects the element or attribute with
+the alternate title using a XPath expression and the later picks an element
+using a CSS Selector (it is not possible to select attributes with CSS). If
+these options are given but do not return any valid text, newslinkrss will
+fall back to the usual title selection.
+
+After the title is selected, it is also interesting to remove redundant text
+from it. newslinkrss has an option `--title-regex` for exactly this use case:
+it accepts a regular expression with a single capture group and, if the
+expression matches, the captured text will be used as the title. Otherwise it
+will keep the original text, so we do not loose titles if something changed
+at the source, for example.  Most common use for this option is to remove
+the name of site from article titles: it is a good design to have them in
+the web but, on a news reader, we do not want them using the very limited
+space available for item titles just to repeat information already shown in
+the feed title.
+
+It is also possible to limit the length of the title, as sometimes errors in
+the source site can give us insanely long ones. This is done with option
+`--max-title-length` (shortcut: `-l`) and the default value, 150, should
+probably work for the most use cases.
+
+
 
 ### Capturing publish dates
 
-The date when a particular item was published is one of the most useful pieces
-of information from a feed, so newslinkrss has several ways of getting it
-from source pages, with availability depending on the way it is used (i.e.
-with or without `--follow`) and the information avaialble in the HTML.
+The date when a particular item was published is another very useful piece
+of information from a feed, so newslinkrss also has several ways of getting
+it from source pages, with availability depending on the way it is used (i.e.
+with or without `--follow`) and the information available in the HTML.
 Related options are the following:
 
 - If explicitly used, options `--date-from-xpath`, `--xpath-date-regex`, and
