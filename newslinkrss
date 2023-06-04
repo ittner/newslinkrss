@@ -845,7 +845,7 @@ def set_cookie_options_for_session(session, args):
         policy.read_only = False
         for cookie_spec in args.cookie:
             c = http.cookies.SimpleCookie(cookie_spec)
-            logger.debug("New custom cookie parsed as %s", repr(c))
+            logger.info("New custom cookie parsed as %s", repr(c))
             for key, value in c.items():
                 session.cookies[key] = value
 
