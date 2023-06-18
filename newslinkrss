@@ -1296,7 +1296,7 @@ def main():
         help=(
             "A regular expression containing a single capture group that "
             "will be used to select the part of the text returned by "
-            "--author-from-xpath and use it as the author name. Example: "
+            "--author-from-xpath and then used as the author name. Example: "
             "'by\\s+(.+)' will remove the 'by ' prefix from a byline, "
             "returning only the name."
         ),
@@ -1326,7 +1326,7 @@ def main():
         help=(
             "A regular expression containing a single capture group that "
             "will be used to select the part of the text returned by "
-            "--author-from-csss and use it as the author name. Example: "
+            "--author-from-csss then used as the author name. Example: "
             "'by\\s+(.+)' will remove the 'by ' prefix from a byline, "
             "returning only the name."
         ),
