@@ -13,10 +13,9 @@ description: |
 
   The results are printed as a RSS feed to stdout or optionally to a file. The
   simplest way to use it is just configure your **local** feed reader, like
-  [Liferea](https://lzone.de/liferea/) or [Newsboat](https://newsboat.org/), to
-  use a "command" source and pass the correct command line arguments to generate
-  a suitable feed -- this allows you to centralize the configuration in the
-  reader itself and let it handle update times, etc.
+  Liferea Newsboat, to use a "command" source and pass the correct command
+  line arguments to generate a suitable feed -- this allows you to centralize
+  the configuration in the reader itself and let it handle update times, etc.
 
   Run `newslinkrss --help` for the complete list of command line options.
 confinement: strict

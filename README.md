@@ -29,10 +29,10 @@ regular expressions, strftime strings, XPath, CSS Selectors, etc.
 
 Everything would be just easier if websites simply provided clean and complete
 RSS or Atom feeds, but these sites are becoming rarer every day. Most sites
-just assume we want to follow them through social media (and that we *use*
-social media!) while giving away privacy and submitting ourselves to tracking
-and personal data collection in exchange for timelines algorithmically
-optimized to improve "engagement" with advertisers.
+assume we want to follow them through social media (or that we *use* social
+media!) and expect us to give away our privacy and submit ourselves to
+tracking and personal data collection in exchange for timelines
+algorithmically optimized to improve "engagement" with advertisers.
 
 I'm still resisting and wrote lots of feed scrapers/filters in the last 18 or
 so years; newslinkrss is one that replaced several of these ad-hoc filters by
@@ -297,7 +297,7 @@ shell script, you may avoid repeated URLs by using sequence expansions (in
 bash) or `seq -f` (in everything else).
 
 
-### Gathering information from insufficient metadata
+### Gathering information from limited metadata
 
 Some sites do not provide standard (not even quasi-standard) metadata that
 newslinkrss can use automatically, so we must gather it from the pages
@@ -337,12 +337,12 @@ for it. Looking into the site we find that:
   CSS approach is simpler for this particular case, so let's use an
   `--author-from-csss 'a[href^="/autor/"]'`. While not required for this
   site (name is the only child element of "a"), some sites may prefix the
-  author name with a "by "; For these cases, we could also use options
-  `--csss-author-regex` and `--xpath-author-regex` to select only the name
-  with a regular expression. Also notice that author is an optional element
-  in both RSS and Atom, but it is nice to have it appearing in the correct
-  fields in the news reader so we can use this information for filtering
-  reading lists, for example.
+  author name with a "by " or similar; For these cases, we could also use
+  options `--csss-author-regex` and `--xpath-author-regex` to select only the
+  name with a regular expression. Also notice that author is an optional
+  element in both RSS and Atom, but it is nice to have it appearing in the
+  correct fields in the news reader so we can use this information for
+  filtering reading lists, for example.
 
 The resulting command line is:
 
@@ -410,14 +410,14 @@ very first example and fix some of its limitations:
 
 - First, we need the correct publish dates; they are neither in the URL nor
   in the anchor text, so we need to `--follow` the pages and get the dates
-  from there. The pages also have no metadata for that, but they have a
-  publish date intended for human readers in a slice of HTML like this:
-  `<small class="text-muted"><b>23/12/2022</b> - some random text</small>`.
+  from there. The pages also have no metadata to do this easily, but they
+  have a publish date intended for human readers in a slice of HTML like this:
+  `<small class="text-muted"><b>23/12/2022</b> - some unrelated text</small>`.
   We can use a XPath expression to select the date from element "b", a good
   one (but technically incorrect as it does not follow CSS rules for attribute
   "class") is `--date-from-xpath '//small[@class="text-muted"]/b/text()'` .
-  It is a bit convoluted but we can replace it with a CSS Selector (and also
-  fix the class attribute issue): `--date-from-csss 'small.text-muted > b'`.
+  It is a bit convoluted so we can replace it with a CSS Selector (that also
+  fixes the class attribute issue): `--date-from-csss 'small.text-muted > b'`.
   It will capture the "23/12/2022" from the text node of inner element "b",
   no need to filter through `--csss-date-regex` to remove unwanted text, but
   as the date format is still ambiguous, we need to give an explicit format
@@ -468,8 +468,8 @@ source site has some very bad design choices.
 
 If you are not following the target pages (i.e. not using option `--follow`),
 the only title available will be the anchor text. If following, newslinkrss
-will, by default, use the target document title with a fall back to the
-anchor text or description for pages that do not have titles.
+will, by default, use the target document title with a fall back to the anchor
+text or description for pages that do not have titles.
 
 Some sites have titles that are just too polluted but also have an alternate
 element with a descriptive text which can be used in its place. For these
@@ -481,13 +481,13 @@ these options are given but do not return any valid text, newslinkrss will
 fall back to the usual title selection.
 
 After the title is selected, it is also interesting to remove redundant text
-from it. newslinkrss has an option `--title-regex` for exactly this use case:
+from it. newslinkrss has an option `--title-regex` for this exact purpose:
 it accepts a regular expression with a single capture group and, if the
 expression matches, the captured text will be used as the title. Otherwise it
 will keep the original text, so we do not loose titles if something changed
-at the source, for example.  Most common use for this option is to remove
-the name of site from article titles: it is a good design to have them in
-the web but, on a news reader, we do not want them using the very limited
+at the source, for example.  Most common use case for this option is to remove
+the name of the site from article titles: it is a good design to have them
+in the web but, on a news reader, we do not want them using the very limited
 space available for item titles just to repeat information already shown in
 the feed title.
 
@@ -662,14 +662,14 @@ repeated as many times as necessary.
 If user-defined cookies are used together with option `--no-cookies`, the
 target site will have access to them, but will not be able to change or
 delete them (by overwriting or redefining the expiry date) or set new ones.
-This results in a read-only set of cookie jar that can be very useful for
-sites that require cookies but use them to change behavior in unwanted ways
-after some number of pages are read.
+This results in a read-only cookie jar that can be very useful for sites that
+require cookies but use them to change behavior in unwanted ways after some
+number of pages are processed.
 
 
 ### Setting arbitrary HTTP headers
 
-Some sites my require unusual request options to work correctly. newslinkrss
+Some sites may require unusual request options to work correctly. newslinkrss
 has an option `--header` (shortcut: `-H`) to set any HTTP header for the
 requests it sends. To use it, just pass the header in format `"NAME: VALUE"`
 (e.g. `--header 'X-Clacks-Overhead: GNU Terry Pratchett'`). This should not
