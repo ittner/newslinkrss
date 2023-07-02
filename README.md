@@ -626,6 +626,17 @@ All three options can be repeated in the command line how many times as
 necessary to express all required rules.
 
 
+### Renaming tags
+
+Sometimes we need to replace all occurrences of a HTML tag by another one
+while preserving all attributes and structure; this is exceptionally common
+when facing sites "infected" by Google AMP and exceptionally rare for
+anything else. Option `--body-rename-tag` (shortcut: `-N`) exists for this
+exact reason; assuming that we want to replace all instances of tag `amp-img`
+by `img`, we can just do a `-N amp-img img`.
+
+
+
 ### Handling request language options
 
 Some sites change their rendering, response language, **date formats**, etc.

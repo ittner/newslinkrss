@@ -391,7 +391,7 @@ def make_clean_title(args, title):
     return clean_title[: args.max_title_length]
 
 
-def remove_unwanted_body_elements(args, body):
+def post_process_item_body(args, body):
     if args.body_remove_tag:
         lxml.etree.strip_tags(body, *args.body_remove_tag)
     if args.body_remove_xpath:
@@ -412,6 +412,10 @@ def remove_unwanted_body_elements(args, body):
                         "body-remove-csss %s matched: deleting element %s", expr, elem
                     )
                     elem.getparent().remove(elem)
+    if args.body_rename_tag:
+        for old_tag, new_tag in args.body_rename_tag:
+            for e in body.iter(old_tag):
+                e.tag = new_tag
 
 
 def make_item_body(args, page_text, tree):
@@ -431,7 +435,7 @@ def make_item_body(args, page_text, tree):
             else:
                 body = lst[0]
             body = copy.deepcopy(body)
-            remove_unwanted_body_elements(args, body)
+            post_process_item_body(args, body)
             cleaner = lxml.html.clean.Cleaner()
             body = cleaner.clean_html(body)
             if isinstance(body, str):
@@ -1476,6 +1480,23 @@ def main():
             "equivalent, see --body-remove-xpath. For a simpler version, "
             "to only remove tags but preserve child elements, see "
             "--body-remove-tag."
+        ),
+    )
+
+    parser.add_argument(
+        "-N",
+        "--body-rename-tag",
+        action="append",
+        type=str,
+        nargs=2,
+        default=None,
+        metavar=("TAG_NAME", "NEW_NAME"),
+        help=(
+            "Replace all occurences of the given tag by the new one in "
+            "the feed body. All attributes and the structure are preserved. "
+            "A typical use case for this is replacing tags amp-img for img "
+            'in sites "infected" by AMP, e.g.: "--rename-tag amp-img img". '
+            "This option may be used as many times as required."
         ),
     )
 
