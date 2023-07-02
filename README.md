@@ -548,7 +548,7 @@ Related options are the following:
 
 These options are tried in this order with the first valid date being picked.
 This way, options explicitly included in command line have priority, with
-higher precendence being given to the ones which may return a "good" date.
+higher precedence being given to the ones which may return a "good" date.
 If no date options are listed, or if could not grab a date from the document,
 standard metadata and HTTP headers will be used (in this order).
 
@@ -563,7 +563,7 @@ ignore any failure if it is not available or is invalid. Option `--locale`
 allows setting an explicit locale name, so newslinkrss will use it or abort
 in the event of a failure. If you want to keep the default best-effort
 approach for a non-default locale, set environment variable LC_ALL when
-caling newslinkrss (i.e. call with
+calling newslinkrss (i.e. call with
 `"LC_ALL=pt_BR.UTF-8 newslinkrss <options>"`).
 
 
