@@ -626,7 +626,7 @@ All three options can be repeated in the command line how many times as
 necessary to express all required rules.
 
 
-### Renaming tags
+### Renaming tags and attributes
 
 Sometimes we need to replace all occurrences of a HTML tag by another one
 while preserving all attributes and structure; this is exceptionally common
@@ -634,6 +634,19 @@ when facing sites "infected" by Google AMP and exceptionally rare for
 anything else. Option `--body-rename-tag` (shortcut: `-N`) exists for this
 exact reason; assuming that we want to replace all instances of tag `amp-img`
 by `img`, we can just do a `-N amp-img img`.
+
+A similar use case appears when sites use lazy loading strategies for images.
+It is a bit common to have the image "src" attribute pointing to a
+placeholder image, sometimes inlined in a "data:" URL, while the URL for the
+actual image is in another attribute, with a script loading the image only
+after the user scrolls the page. Option `--body-rename-attr` can fix some of
+these cases. Assuming that a site has all src attributes for img tags in the
+attribute data-src, we can do `--body-rename-attr img data-src src`. Elements
+that do not have the old attribute will not be changed. If the element
+already has an attribute with the new name, it will be replaced. This
+operation always runs **after** `--body-rename-tag` and sees the DOM as
+already modified by it, so when renaming both tags and attributes, you must
+look for the new tag name.
 
 
 

@@ -416,6 +416,12 @@ def post_process_item_body(args, body):
         for old_tag, new_tag in args.body_rename_tag:
             for e in body.iter(old_tag):
                 e.tag = new_tag
+    if args.body_rename_attr:
+        for tag, old_attr_name, new_attr_name in args.body_rename_attr:
+            for e in body.iter(tag):
+                if old_attr_name in e.attrib:
+                    e.attrib[new_attr_name] = e.attrib[old_attr_name]
+                    del e.attrib[old_attr_name]
 
 
 def make_item_body(args, page_text, tree):
@@ -1497,6 +1503,27 @@ def main():
             "A typical use case for this is replacing tags amp-img for img "
             'in sites "infected" by AMP, e.g.: "--rename-tag amp-img img". '
             "This option may be used as many times as required."
+        ),
+    )
+
+    parser.add_argument(
+        "--body-rename-attr",
+        action="append",
+        type=str,
+        nargs=3,
+        default=None,
+        metavar=("TAG_NAME", "OLD_ATTR_NAME", "NEW_ATTR_NAME"),
+        help=(
+            "Rename attributes from the given tag. This can be used, for "
+            "example, to recover images that are subjected to some lazy "
+            "loading strategy: assuming that some site has all images src "
+            "attributes pointing to a placeholder image while the actual "
+            'URL for the image is in attribute "data-src", it is possible '
+            'to recover it by doing "--body-rename-attr img data-src src". '
+            "This option has no effect if the element does not have the "
+            "source attribute. The destination attribute will be overriden "
+            "if it already exists. This option may be used as many times "
+            "as required."
         ),
     )
 
