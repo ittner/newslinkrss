@@ -473,9 +473,9 @@ def find_item_title(args, attr_parser, request, tree, anchor_text, base_attrs):
     if not title and args.title_from_csss and tree is not None:
         try:
             for res in tree.cssselect(args.title_from_csss):
-                etext = res.text
+                etext = res.text_content()
                 if etext:
-                    title = str(etext)
+                    title = etext
                     break
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
             logger.exception("When trying to find title from CSS selector")
@@ -505,7 +505,7 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
     if not date and args.date_from_csss and tree is not None:
         try:
             for res in tree.cssselect(args.date_from_csss):
-                etext = res.text
+                etext = res.text_content()
                 if etext is None:
                     continue
                 logger.debug("date-from-csss found candidate text: '%s'", etext)
@@ -557,10 +557,9 @@ def find_item_author(args, attr_parser, tree):
     if not author and args.author_from_csss and tree is not None:
         try:
             for res in tree.cssselect(args.author_from_csss):
-                if res.text is not None:
-                    author = get_regex_first_group(
-                        args.csss_author_regex, str(res.text)
-                    )
+                text = res.text_content()
+                if text is not None:
+                    author = get_regex_first_group(args.csss_author_regex, str(text))
                     break
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
             logger.exception("When trying to find author from a CSS selector")
