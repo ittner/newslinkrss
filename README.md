@@ -242,9 +242,83 @@ And now we have our feed!
 
 The body for this example is very simple but the selectors (both XPath and
 CSSS) are surprisingly powerful. They can return any number of elements in
-a given order, so you can create a readable item body from whatever exists
-in the source page by carefully picking elements in the right order (XPath
+any order, so you can create a readable item body from whatever exists in
+the source page by carefully picking elements in the right order (XPath
 operator "|" and CSSS "," are your friends!).
+
+
+### Cleaning body elements (and handling bad CSS class names)
+
+If we look at the bodies captured with the previous Reuters example, we will
+notice that (at least in July 2023 when this text is being written) there are
+still some unwanted elements that add too much noise to the output. Inside
+the `article` element, we also get:
+
+- Social media share buttons: actually, not the buttons themselves because
+  for elements are removed by default, but the `ul` and `li` elements that
+  encapsulated them remain -- newslinkrss simple does not know which ones
+  are useful and which ones are not, so it can not remove them automatically;
+
+- Related articles and "Read next" sections: we want only the text of the
+  current article in a clean and readable format.
+
+Usually it is very easy to get rid of these using options `--body-remove-xpath`
+(shortcut `-X`) and `--body-remove-csss` (shortcut `-C`), but this particular
+site has a very non-semantic structure and uses automatically generated
+and unstable-looking class names like `article-header__toolbar__3lT1M`,
+`article-body__toolbar__1_CO8`, and `article__read-next__Kjxdw`. However, we
+can notice a pattern here: there are some stable prefixes and random suffixes
+that will possibly change faster than the "stable" part.
+
+We can handle these with a bit more advanced object selections. For this
+case, let's use CSS Selectors as they are a bit shorter and more readable:
+
+- First, we look for [attribute substrings](https://www.w3.org/TR/selectors/#attribute-substrings)
+  and remove the toolbars with a
+  `--body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'`.
+  Notice that we are playing really loose here! The first rule does not mean
+  "any `div` element marked with a class with a name starting with
+  `article-header__toolbar__`", it actually means "any `div` element with a
+  `class` attribute containing the substring `article-header__toolbar__`". In
+  a site with shorter class names, we would probably face a lot of false
+  positives! But extracting feeds is almost always a game of kludges, so let
+  it be.
+
+- Do the same hack for the related articles but, looking a bit closer we can
+  notice that inside its main div we also have another tagged with class
+  `read-next-panel`, which is a pretty readable and stable-looking name! So
+  let's add an extra standard match for it as a fail-safe in the event the
+  external div stops matching; it will still leave some garbage text, but
+  will remove the most of the article list. The syntax is
+  `--body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'`.
+
+We could have combined these two rules in one, but leaving them separate
+makes debugging easier as the rules are printed with the log messages when
+running with `--log debug`, allowing us to see which ones are matching.
+
+It is also important to notice that options `--body-remove-*` work over the
+DOM that was generated from `--body-xpath` or `--body-csss`. These options
+allows a lot of control over the way the elements are copied from the main
+document DOM, and the result can end up being very different once we start
+using some clever selections.
+
+So, our updated command line is now:
+
+    newslinkrss \
+        --follow \
+        -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+' \
+        --max-page-length 512 \
+        --with-body \
+        --body-xpath '//article' \
+        --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]' \
+        --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel' \
+        --require-dates \
+        --title-regex '(.+)\s+\|' \
+        https://www.reuters.com/
+
+... and it gives us a cleaner feed!
+
+
 
 
 ### A single feed from multiple start URLs
@@ -272,6 +346,8 @@ This can be solved with this command:
         --max-page-length 512 \
         --with-body \
         --body-xpath '//article' \
+        --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]' \
+        --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel' \
         --require-dates \
         --title-regex '(.+)\s+\|' \
         --title "Reuters (Technology and World only)" \
