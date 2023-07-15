@@ -1,11 +1,10 @@
 # About
 
 newslinkrss generates RSS feeds for websites that do not provide their own.
-This is done by loading URLs and collecting links that matches patterns to
-the of feed items, given as regular expressions, and optionally visiting them
-to get more details and even processing the target pages with XPath and CSS
-Selectors if required. It basically works as a purpose specific crawler or
-scraper.
+It works by loading URLs with lists of articles, looking for links matching
+regular expressions, and optionally visiting them to get more information
+and even processing these target pages with XPath and CSS Selectors if
+necessary. It is basically a purpose specific crawler or scraper.
 
 The results are printed as a RSS feed to stdout or optionally to a file. The
 simplest way to use it is just configure your **local** feed reader, like
