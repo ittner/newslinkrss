@@ -785,10 +785,10 @@ def make_accept_language_header(args):
             langs.append(normalized if normalized else lang)
 
     if not langs:
-        locale = os.getenv("LANG")
-        if locale:
-            locale = locale.split(".")[0]
-            normalized = normalize_rfc1766_lang_tag(locale)
+        locale_name = os.getenv("LANG")
+        if locale_name:
+            locale_name = locale_name.split(".")[0]
+            normalized = normalize_rfc1766_lang_tag(locale_name)
             if normalized:
                 langs.append(normalized)
 
