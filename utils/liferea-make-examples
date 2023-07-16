@@ -1,0 +1,179 @@
+#!/usr/bin/env python
+
+#
+# newslinkrss - RSS feed generator for generic sites
+# Copyright (C) 2020-2023  Alexandre Erwin Ittner <alexandre@ittner.com.br>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+
+"""
+Script to generate a list of newslinkrss examples from a Liferea OPML
+file. It's easier to keep track of them this way.
+"""
+
+import argparse
+import os.path
+import re
+import sys
+from lxml import etree
+
+
+class Examples:
+    def __init__(self, opml_path):
+        self.feeds = []
+        self._load(opml_path)
+
+    def _load(self, opml_path):
+        with open(opml_path) as fp:
+            tree = etree.parse(fp)
+        for elem in tree.xpath('//outline[@type="rss" and @xmlUrl and @title]'):
+            url = elem.attrib["xmlUrl"]
+            if url.startswith("|"):
+                cmdline = url[1:].strip()
+                if cmdline.startswith("newslinkrss"):
+                    # Remove my pseudo-tags from the title
+                    title = elem.attrib["title"].rsplit("(", 1)[0].strip()
+                    link = elem.attrib["htmlUrl"] if "htmlUrl" in elem.attrib else None
+                    self.feeds.append((cmdline, title, link))
+
+    def group(self, name):
+        print("\n\n# " + name + "\n")
+
+    def subgroup(self, name):
+        print("\n## " + name + "\n")
+
+    def subsubgroup(self, name):
+        print("\n### " + name + "\n")
+
+    def print_feed(self, feed):
+        if feed[2]:
+            print(f"#### [{feed[1]}]({feed[2]})")
+        else:
+            print("#### " + feed[1])
+        print("\n    " + feed[0] + "\n")
+
+    def print_matching(self, regex_list):
+        to_remove = []
+        for rx in regex_list:
+            for feed in self.feeds:
+                if re.match(r".+\b" + rx, feed[0]):
+                    self.print_feed(feed)
+                    to_remove.append(feed)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=(__doc__),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    parser.add_argument(
+        "-p",
+        "--path",
+        action="store",
+        metavar="OPML_PATH",
+        default=os.path.expanduser("~/.config/liferea/feedlist.opml"),
+        help="Path to the source OPML file.",
+    )
+
+    args = parser.parse_args()
+    print_examples(args)
+    return 0
+
+
+def print_examples(args):
+    e = Examples(args.path)
+
+    print(
+        """
+Here are a few random examples on how newslinkrss can be used to generate
+feeds from several types of sites. They were working (or mostly working!)
+in the moment this file was created but sites can change every time and
+break the feeds.
+
+"""
+    )
+
+    e.group("Sources in English")
+
+    e.subgroup("News")
+    e.print_matching(
+        [
+            r"\bapnews.com/.+",
+            r"\breuters.com/.+",
+            r"\bwashingtonpost.com/.+",
+            r"\beconomist.com/.+",
+            r"\bkyivpost.com/.+",
+            r"\babcnews\.go\.com/.+",
+            r"\bnymag\.com/.+",
+        ]
+    )
+
+    e.subgroup("J. R. R. Tolkien")
+    e.print_matching(
+        [
+            r"\bdeviantart\.com/.+tolkien.*",
+        ]
+    )
+
+    e.subgroup("Science")
+    e.print_matching(
+        [
+            r"\bnature.com/.+",
+        ]
+    )
+
+    e.group("Sources in Portuguese / Fontes em Português")
+
+    e.subgroup("Jornais e revistas")
+    e.print_matching(
+        [
+            r"\bfolha.uol.com.br/.+",
+            r"\bjornaldomediovale.com.br/.+",
+            r"\bdiariodajaragua.com.br/.+",
+        ]
+    )
+
+    e.subgroup("Portais")
+    e.print_matching(
+        [
+            r"\bnoticias\.uol.com.br/.+",
+            r"\bg1\.globo\.com/.+",
+            r"\bnsctotal.com.br/.+",
+            r"\bcrusoe.uol.com.br/.+",
+            r"\bmigalhas.com.br/.+",
+        ]
+    )
+
+    e.subgroup("Universidades")
+    e.print_matching([r"\budesc\.br/.+"])
+
+    e.subgroup("Entidades governamentais")
+    e.print_matching([r"\b.+\.(gov|jus|leg|mp)\.br/.+"])
+
+    e.subgroup("Cultura em geral")
+    e.print_matching(
+        [
+            r"\bscar\.art\.br/.*",
+            r"\bacademia\.org\.br/.+",
+            r"\bestadao.com.br/cultura/.+",
+            r"\bomelete\.com\.br/.+",
+        ]
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main())
