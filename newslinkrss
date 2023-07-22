@@ -598,6 +598,14 @@ def find_item_categories(args, attr_parser, tree):
     if not categories and attr_parser.section:
         categories = [attr_parser.section]
 
+    if categories and args.split_categories:
+        new_categories = []
+        for curr_categ in categories:
+            split_categs = curr_categ.split(args.split_categories)
+            for tmp in split_categs:
+                new_categories.append(tmp)
+        categories = new_categories
+
     # Clean-up bogus categories (too long, empty ...)
     valid_categories = []
     for categ in categories:
@@ -1398,6 +1406,21 @@ def main():
         default=None,
         metavar="CSS_SELECTOR",
         help=("Use this CSS Selector to get the list of categories for the item."),
+    )
+
+    parser.add_argument(
+        "--split-categories",
+        action="store",
+        default=None,
+        metavar="STRING",
+        help=(
+            "Post-process the categories of the items, splitting them with "
+            "the string given in this option. This is useful for sites that "
+            "put categories in a single text element or attribute, separated "
+            "by commas or similar, making them very readable for humans but "
+            "hard (or impossible) to get them with options "
+            "--categories-from-xpath or --categories-from-csss."
+        ),
     )
 
     parser.add_argument(
