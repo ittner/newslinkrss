@@ -724,6 +724,42 @@ already modified by it, so when renaming both tags and attributes, you must
 look for the new tag name.
 
 
+### Capturing categories
+
+Every item of a feed can have a list of categories (the RSS name for tags or
+topics) and they can be pretty valuable for sorting and filtering. By default,
+newslinkrss tries to get them from Open Graph or quasi-standard metadata, but
+some sites may only put them in some other element. Options
+`--categories-from-xpath` and `--categories-from-csss` allow reading the
+categories from the DOM using XPath and CSS Selectors, respectively.
+
+For example, assume that a site has a list of tags in an element like this:
+
+    <ul class="tags">
+      <li><a href="/tag/essays">Essays</a></li>
+      <li><a href="/tag/tolkien">Tolkien</a></li>
+      <li><a href="/tag/the-silmarillion">The Silmarillion</a></li>
+      <li><a href="/tag/unfinished-tales">Unfinished Tales</a></li>
+    </ul>
+
+We can easily get them using `--categories-from-csss 'ul.tags li a'`.
+
+Sometimes list of tags can be trickier. Assume another site with a list of
+topics in a single HTML meta tag similar to:
+
+    <meta property="topics" content="essays, tolkien, the silmarillion, unfinished tales">
+
+These categories are in an attribute, so we can use the XPath version to get
+them, i.e. `--categories-from-xpath '//meta[@property="topics"]/@content'`.
+The value, however, is a single string with no markup that allow us to get
+the individual category names. For these cases we can use option
+`--split-categories ","` (which applies to the results of both XPath and
+CSSS versions) to split this string in a list of categories at every comma.
+
+newslinkrss also does some simple cleanup for the list of categories
+automatically (removing spaces, putting sensible limits to the number and
+length of categories, etc.) to prevent some crazy situations.
+
 
 ### Handling request language options
 
