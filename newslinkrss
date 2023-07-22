@@ -566,6 +566,51 @@ def find_item_author(args, attr_parser, tree):
     return author or attr_parser.author
 
 
+def find_item_categories(args, attr_parser, tree):
+    """Try to get the list of categories of an item.
+
+    Finds the categories from explicitly requested elements or falls back to
+    metadata if these are not available.
+    """
+    categories = []
+
+    if not categories and args.categories_from_xpath and tree is not None:
+        try:
+            categories = [
+                str(res) for res in tree.xpath(args.categories_from_xpath) if res
+            ]
+        except lxml.etree.XPathEvalError:
+            logger.exception("When trying to find categories from XPath")
+
+    if not categories and args.categories_from_csss and tree is not None:
+        try:
+            categories = [
+                res.text_content()
+                for res in tree.cssselect(args.categories_from_csss)
+                if res is not None
+            ]
+        except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
+            logger.exception("When trying to find categories from a CSS selector")
+
+    if not categories and attr_parser.tags:
+        categories = attr_parser.tags
+
+    if not categories and attr_parser.section:
+        categories = [attr_parser.section]
+
+    # Clean-up bogus categories (too long, empty ...)
+    valid_categories = []
+    for categ in categories:
+        categ = categ.strip()[:128].strip()
+        if categ != "":
+            valid_categories.append(categ)
+    if len(valid_categories) > 50:
+        logger.warning("Item with %d categories! Pruning.", len(valid_categories))
+        valid_categories = valid_categories[:50]
+
+    return valid_categories
+
+
 def do_session_http_get(session, url, timeout=2, max_len_kb=0, encoding=None):
     """Do a HTTP(S) GET request for the URL in the context of session,
     subjected to the limits imposed for timeout (in seconds), max_len_kb
@@ -652,12 +697,7 @@ def make_feed_item_follow(session, url, used_urls, args, link_text, base_attrs):
         bodyhtml = make_item_body(args, page_text, tree)
         if bodyhtml:
             description = bodyhtml
-    if attr_parser.tags:
-        categories = attr_parser.tags
-    elif attr_parser.section:
-        categories = [attr_parser.section]
-    else:
-        categories = None
+    categories = find_item_categories(args, attr_parser, tree)
     if date:
         # PyRSS2Gen ignores tzinfos and requires the date to be explicitly in UTC.
         date = datetime.datetime.fromtimestamp(date.timestamp(), datetime.timezone.utc)
@@ -1339,6 +1379,25 @@ def main():
             "'by\\s+(.+)' will remove the 'by ' prefix from a byline, "
             "returning only the name."
         ),
+    )
+
+    parser.add_argument(
+        "--categories-from-xpath",
+        action="store",
+        default=None,
+        metavar="XPATH_EXPRESSION",
+        help=(
+            "Use this XPath expression to get the list of categories for the "
+            "feed item. Expression should return a string."
+        ),
+    )
+
+    parser.add_argument(
+        "--categories-from-csss",
+        action="store",
+        default=None,
+        metavar="CSS_SELECTOR",
+        help=("Use this CSS Selector to get the list of categories for the item."),
     )
 
     parser.add_argument(
