@@ -406,7 +406,7 @@ for it. Looking into the site we find that:
 - The target page has no author information in its metadata so newslinkrss
   will not be able to find their names automatically. However, it has a link
   to the list of articles from the same author in format
-  `<a href="/autor/xxxxxxxx">Author Name</a>` and we can use the prefix
+  `<a href="/autor/author-name">Author Name</a>` and we can use the prefix
   from attribute `href` to pick it with XPath (using option
   `--author-from-xpath`) or CSS Selectors (with `--author-from-csss`). The
   CSS approach is simpler for this particular case, so let's use an
@@ -487,31 +487,27 @@ very first example and fix some of its limitations:
   in the anchor text, so we need to `--follow` the pages and get the dates
   from there. The pages also have no metadata to do this easily, but they
   have a publish date intended for human readers in a slice of HTML like this:
-  `<small class="text-muted"><b>23/12/2022</b> - some unrelated text</small>`.
-  We can use a XPath expression to select the date from element "b", a good
-  one (but technically incorrect as it does not follow CSS rules for attribute
-  "class") is `--date-from-xpath '//small[@class="text-muted"]/b/text()'` .
-  It is a bit convoluted so we can replace it with a CSS Selector (that also
-  fixes the class attribute issue): `--date-from-csss 'small.text-muted > b'`.
-  It will capture the "23/12/2022" from the text node of inner element "b",
-  no need to filter through `--csss-date-regex` to remove unwanted text, but
-  as the date format is still ambiguous, we need to give an explicit format
-  with option `--csss-date-fmt '%d/%m/%Y'`;
+  `<small class="text-muted"><b>23/12/2022</b> - some unrelated text</small>`,
+  so it is pretty easy to get it with a CSS selector:
+  `--date-from-csss 'small.text-muted > b'`. It will capture the "23/12/2022"
+  from the text node of inner element "b", no need to filter through
+  `--csss-date-regex` to remove unwanted text, but the date format is still
+  ambiguous so we need to give an explicit format with option
+  `--csss-date-fmt '%d/%m/%Y'`;
 
 - Let's be extra careful with the URL pattern and never capture (or follow!)
   links pointing to other domains. We can replace it with a more restricted
   `-p 'https://www.jaraguadosul.sc.gov.br/news/.+'`;
 
-- As we are already following the pages, let's also generate a full feed.
-  The relevant part of the articles are inside a "div" element with
-  attribute "id" set to "area_impressao" (that's Portuguese for
-  "printing_area" and one may imagine it is being used to format the page
-  for printing, however there is neither an alternate style sheet nor a
-  @media selector for it ... anyway, at least it helps us to select the
-  correct text). We can isolate this element with a XPath expression
-  `'//div[@id="area_impressao"]'` but this is slightly more complex than
-  the equivalent CSS Selector `div#area_impressao` and, as we already used
-  XPath in several other examples, let's stick with CSSS;
+- As we are already following the pages, let's also generate a full feed. The
+  relevant part of the articles are inside a "div" element with attribute "id"
+  set to "area_impressao" (that's Portuguese for "printing_area" and one may
+  imagine it is being used to format the page for printing, however there is
+  neither an alternate style sheet nor a @media selector for it ... anyway,
+  at least it helps us to select the correct text). We can isolate this
+  element with a XPath expression `'//div[@id="area_impressao"]'` but this is
+  slightly more complex than the equivalent CSS Selector `div#area_impressao`,
+  so let's stick with the later;
 
 - That site can be a bit slow sometimes, so let's be extra tolerant and
   increase the HTTP timeout to 10 s;
@@ -845,9 +841,9 @@ user-facing application. It is possible to disable this behavior with option
 `--no-exception-feed` (shortcut `-E`).
 
 Notice that the program always return a non-zero status code on failures. Some
-news readers (e.g. Liferea) won't process the output in these cases and discard
-the feed entries with the error reports. You may need to override the status
-code with something like `newslinkrss YOUR_OPTIONS; exit 0`.
+news readers (e.g. Liferea) won't process the output in these cases and
+discard the feed entries with the error reports. You may need to override the
+status code with something like `newslinkrss YOUR_OPTIONS; exit 0`.
 
 
 ### Writing output to a file

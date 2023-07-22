@@ -67,7 +67,7 @@ break the feeds.
 
 #### [Folha de S.Paulo](https://www1.folha.uol.com.br/)
 
-    newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 https://www1.folha.uol.com.br/
+    newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, .c-signature__author, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --body-rename-attr img data-src src https://www1.folha.uol.com.br/
 
 #### [Folha de S.Paulo - Hélio Schwartsman](https://www1.folha.uol.com.br/colunas/helioschwartsman/)
 
@@ -90,7 +90,7 @@ break the feeds.
 
 #### [UOL - Últimas notícias](https://noticias.uol.com.br/)
 
-    newslinkrss --follow -t 4  -p 'https://noticias.uol.com.br/.+/\d+/\d+/.+' --date-from-xpath '//p[@ia-date-publish]/@ia-date-publish' --with-body --body-csss 'article div.author, article div.text, main article' --title-regex '(.+)\s+- UOL Notícias' -X '//div[@ia-related-content]' -C 'div.ads-wrapper, .solar-ads, .jupiter-ads, .solar-comment, .jupiter-see-too, .solar-social-media, .jupiter-share' -C 'aside, div.related-content, .related-content-front, div.related-content-piano, .chartbeat-related-content, .related-content-hyperlink, .blogs-and-columns-recommendation' -C 'div.loading-box, div.clearfix, .new-post-notice, .new-post-notice-columnist' -C 'svg' -C 'style' -C 'img.img-author' -C 'div.magazine-cover' -C '.disclaimer-exclusive-content'  --body-rename-attr img data-src src https://noticias.uol.com.br/
+    newslinkrss --follow -t 4  -p 'https://noticias.uol.com.br/.+/\d+/\d+/.+' --date-from-xpath '//p[@ia-date-publish]/@ia-date-publish | //article//time[@datetime]/@datetime' --with-body --body-csss 'article div.author, article div.text, main article' --title-regex '(.+)\s+- UOL Notícias' -X '//div[@ia-related-content]' -C 'div.ads-wrapper, .solar-ads, .jupiter-ads, .solar-comment, .jupiter-see-too, .solar-social-media, .jupiter-share' -C 'aside, div.related-content, .related-content-front, div.related-content-piano, .chartbeat-related-content, .related-content-hyperlink, .blogs-and-columns-recommendation' -C 'div.loading-box, div.clearfix, .new-post-notice, .new-post-notice-columnist' -C 'svg' -C 'style' -C 'img.img-author' -C 'div.magazine-cover' -C '.disclaimer-exclusive-content'  --body-rename-attr img data-src src https://noticias.uol.com.br/
 
 #### [G1 Santa Catarina](https://g1.globo.com/sc/santa-catarina/index/feed/pagina-1.ghtml)
 
@@ -128,7 +128,7 @@ break the feeds.
 
 #### [Câmara de Vereadores de Jaraguá do Sul](https://www.jaraguadosul.sc.leg.br/)
 
-    newslinkrss -p 'https://www.jaraguadosul.sc.leg.br/destaques/.+' -fB --body-csss '.elementor-widget-theme-post-content' --title-regex '(.*\S)\s*-[^-]+$' https://www.jaraguadosul.sc.leg.br/  https://www.jaraguadosul.sc.leg.br/publicacoes/destaques/ https://www.jaraguadosul.sc.leg.br/publicacoes/destaques/page/2/
+    newslinkrss -p 'https://www.jaraguadosul.sc.leg.br/(destaques|geral)/.+' -fB --body-csss '.elementor-widget-theme-post-content' --title-regex '(.*\S)\s*-[^-]+$' https://www.jaraguadosul.sc.leg.br/  https://www.jaraguadosul.sc.leg.br/publicacoes/destaques/ https://www.jaraguadosul.sc.leg.br/geral/
 
 #### [ACN - Agência Catarinense de Notícias](https://estado.sc.gov.br/noticias/)
 
