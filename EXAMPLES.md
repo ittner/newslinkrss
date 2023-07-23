@@ -58,6 +58,10 @@ break the feeds.
 
     newslinkrss -p 'https://www.nature.com/articles/.+' --follow  --with-body --body-csss 'main' --date-from-xpath '//time[@datetime]/@datetime' --title-regex '(.+)\s*\|\s*Nature' -C '.u-hide-print' -C '.hide-print' -C 'style' https://www.nature.com/
 
+#### [Reuters / Science](https://www.reuters.com/science/)
+
+    newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/science/
+
 
 
 # Sources in Portuguese / Fontes em Português
@@ -102,7 +106,7 @@ break the feeds.
 
 #### [NSC Total](https://www.nsctotal.com.br/)
 
-    newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+//www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss 'div.author a' -C 'a[href*=whatsapp]' -C '.ad-single' https://www.nsctotal.com.br/ https://www.nsctotal.com.br/ultimas-noticias https://www.nsctotal.com.br/ultimas-noticias?paged=2
+    newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+//www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss 'div.author a' -C 'a[href*=whatsapp]' --categories-from-csss 'div.tags a.tag' -C '.ad-single' https://www.nsctotal.com.br/ https://www.nsctotal.com.br/ultimas-noticias https://www.nsctotal.com.br/ultimas-noticias?paged=2
 
 #### [Crusoé](https://crusoe.uol.com.br/)
 
@@ -184,4 +188,11 @@ break the feeds.
 #### [Omelete](https://www.omelete.com.br/noticias)
 
     newslinkrss  -n 30 -f -B -p '^https://www.omelete.com.br/.+/.+' --max-page-length 256 --require-dates --body-csss 'div.article__body' https://www.omelete.com.br/noticias
+
+
+## Outros
+
+#### [AEROIN](https://aeroin.net/)
+
+    newslinkrss -p 'https://aeroin.net/[^/]+(-[^/]+){3,}/?$' -fB --body-csss 'article .td-post-content' -Q 'amp' -C 'i-amphtml-sizer, style' -C .td-post-sharing --author-from-xpath '//meta[@name="author"]/@content' https://aeroin.net/
 

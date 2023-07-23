@@ -113,7 +113,7 @@ break the feeds.
     e.print_matching(
         [
             r"\bapnews.com/.+",
-            r"\breuters.com/.+",
+            r"\breuters.com/\s*$",
             r"\bwashingtonpost.com/.+",
             r"\beconomist.com/.+",
             r"\bkyivpost.com/.+",
@@ -133,6 +133,7 @@ break the feeds.
     e.print_matching(
         [
             r"\bnature.com/.+",
+            r"\breuters.com/science/",
         ]
     )
 
@@ -173,6 +174,9 @@ break the feeds.
             r"\bomelete\.com\.br/.+",
         ]
     )
+
+    e.subgroup("Outros")
+    e.print_matching([r"\baeroin.net"])
 
 
 if __name__ == "__main__":
