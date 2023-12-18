@@ -63,15 +63,26 @@ break the feeds.
     newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/science/
 
 
+## Computing
+
+#### [USENIX - ;login:](https://www.usenix.org/publications/loginonline)
+
+    newslinkrss -p 'https://www.usenix.org/publications/loginonline/[^/]+' -i '.*/loginonline/writing$' -t 5 --follow --with-body --body-csss '#main-wrapper' --title-regex '^([^|]*[^|\s])' https://www.usenix.org/publications/loginonline
+
+#### [USENIX - Proceedings](https://www.usenix.org/publications/proceedings)
+
+    newslinkrss -p 'https://www.usenix.org/conference/[^/]+/presentation/.+' -t 5 --follow --with-body --body-csss 'article' --title-regex '^([^|]*[^|\s])' https://www.usenix.org/publications/proceedings
+
+
 
 # Sources in Portuguese / Fontes em Português
 
 
 ## Jornais e revistas
 
-#### [Folha de S.Paulo](https://www1.folha.uol.com.br/)
+#### [Folha de S.Paulo](https://www.folha.uol.com.br/)
 
-    newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, .c-signature__author, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --body-rename-attr img data-src src https://www1.folha.uol.com.br/
+    newslinkrss --follow -p 'https://www.*\.folha\.uol\.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, .c-signature__author, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --body-rename-attr img data-src src https://www.folha.uol.com.br/
 
 #### [Folha de S.Paulo - Hélio Schwartsman](https://www1.folha.uol.com.br/colunas/helioschwartsman/)
 
@@ -81,6 +92,10 @@ break the feeds.
 
     newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --require-dates https://www1.folha.uol.com.br/autores/reinaldo-jose-lopes.shtml
 
+#### [Folha de S.Paulo - Lygia Maria](https://www1.folha.uol.com.br/colunas/lygia-maria/)
+
+    newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/lygia-maria/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --require-dates https://www1.folha.uol.com.br/colunas/lygia-maria/
+
 #### [Jornal do Médio Vale](https://www.jornaldomediovale.com.br/)
 
     newslinkrss --follow --with-body  -p 'https://(www.)?jornaldomediovale.com.br/\S+\.\d+' --date-from-csss 'ul.post-meta-info > li:last-of-type' --csss-date-regex '\s*(\S.*\S).*' --csss-date-fmt '%d/%m/%Y %H:%M' --body-csss 'div.entry-content' --title-regex '.*/\s*([^/]+)$'  https://www.jornaldomediovale.com.br/
@@ -88,6 +103,14 @@ break the feeds.
 #### [Diário da Jaraguá](https://www.diariodajaragua.com.br/jaragua-do-sul/)
 
     newslinkrss -f -B -p 'https://www.diariodajaragua.com.br/.+/[0-9]+/' --body-xpath '//article' --max-page-length 1024 https://www.diariodajaragua.com.br/jaragua-do-sul/ -X '//a[contains(@href, "https://chat.whatsapp.com")]/..' -C '.squareBanner' -X '//header' -X '//section'
+
+#### [O Globo - Últimas notícias](https://oglobo.globo.com/ultimas-noticias/)
+
+    newslinkrss -p 'https://oglobo.globo.com/.+noticia/\d+/\d+/\d+/.+.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address[itemprop="author"] a span[itemprop="name"]' -C 'section.mc-column.box-wrapper, section.passador-materia'  https://oglobo.globo.com/ultimas-noticias/ https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-4 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-5 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-6
+
+#### [O Globo - Elio Gaspari](https://oglobo.globo.com/opiniao/elio-gaspari/)
+
+    newslinkrss -p 'https://oglobo.globo.com/opiniao/elio-gaspari/.+/\d+/\d+/.+\.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address.header-coluna__title' -C 'section.mc-column.box-wrapper, section.passador-materia' https://oglobo.globo.com/opiniao/elio-gaspari/
 
 
 ## Portais
@@ -108,9 +131,9 @@ break the feeds.
 
     newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+//www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss 'div.author a' -C 'a[href*=whatsapp]' --categories-from-csss 'div.tags a.tag' -C '.ad-single' https://www.nsctotal.com.br/ https://www.nsctotal.com.br/ultimas-noticias https://www.nsctotal.com.br/ultimas-noticias?paged=2
 
-#### [Crusoé](https://crusoe.uol.com.br/)
+#### [Crusoé](https://crusoe.com.br/)
 
-    newslinkrss -f -B -p 'https://crusoe.uol.com.br/(edicoes/\d+|secao|diario)/.+'  --body-csss 'article.post' -C 'style, svg' -C 'div.share, .container_share, div.tags' -C '#action-mark, #show-audio-player' -C '#wallcontent, #move-banner-box1' -C '.comment-section'  --date-from-csss 'span.data' --csss-date-regex '(\d+\.\d+.\d+ \d+:\d+)' --csss-date-fmt  '%d.%m.%y %H:%M' --title-regex '(.+\S)\s*-\s*Crusoé\s*$' --author-from-csss 'span.autor-info span' --no-cookies https://crusoe.uol.com.br/
+    newslinkrss -f -B -p 'https://crusoe.com.br/(edicoes/\d+|secao|diario)/.+'  --body-csss 'article.post' -C 'style, svg' -C 'div.share, .container_share, div.tags' -C '#action-mark, #show-audio-player' -C '#wallcontent, #move-banner-box1' -C '.comment-section'  --date-from-csss 'span.data' --csss-date-regex '(\d+\.\d+.\d+ \d+:\d+)' --csss-date-fmt  '%d.%m.%y %H:%M' --title-regex '(.+\S)\s*-\s*Crusoé\s*$' --author-from-csss 'span.autor-info span' --no-cookies https://crusoe.com.br/
 
 #### [Migalhas](https://www.migalhas.com.br/)
 
@@ -195,4 +218,8 @@ break the feeds.
 #### [AEROIN](https://aeroin.net/)
 
     newslinkrss -p 'https://aeroin.net/[^/]+(-[^/]+){3,}/?$' -fB --body-csss 'article .td-post-content' -Q 'amp' -C 'i-amphtml-sizer, style' -C .td-post-sharing --author-from-xpath '//meta[@name="author"]/@content' https://aeroin.net/
+
+#### [Idec - Instituto Brasileiro de Defesa do Consumidor](https://idec.org.br/noticias)
+
+    newslinkrss  -p '^https://idec.org.br/.+/.+' --follow --with-body --body-csss '#main-content header, div.datapublicacao, div.field-name-field-linha-fina, div#content div.field-name-body div.field-item' --date-from-csss 'div.field-name-changed-date div.field-item, div.field-name-post-date div.field-item' --csss-date-fmt '%d/%m/%Y' --require-dates --title-regex '^([^|]+)\s*|' https://idec.org.br/noticias https://idec.org.br/artigos
 

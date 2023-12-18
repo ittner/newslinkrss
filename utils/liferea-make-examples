@@ -112,28 +112,35 @@ break the feeds.
     e.subgroup("News")
     e.print_matching(
         [
-            r"\bapnews.com/.+",
-            r"\breuters.com/\s*$",
-            r"\bwashingtonpost.com/.+",
-            r"\beconomist.com/.+",
-            r"\bkyivpost.com/.+",
-            r"\babcnews\.go\.com/.+",
-            r"\bnymag\.com/.+",
+            r"apnews.com/.+",
+            r"reuters.com/\s*$",
+            r"washingtonpost.com/.+",
+            r"economist.com/.+",
+            r"kyivpost.com/.+",
+            r"abcnews\.go\.com/.+",
+            r"nymag\.com/.+",
         ]
     )
 
     e.subgroup("J. R. R. Tolkien")
     e.print_matching(
         [
-            r"\bdeviantart\.com/.+tolkien.*",
+            r"deviantart\.com/.+tolkien.*",
         ]
     )
 
     e.subgroup("Science")
     e.print_matching(
         [
-            r"\bnature.com/.+",
-            r"\breuters.com/science/",
+            r"nature.com/.+",
+            r"reuters.com/science/",
+        ]
+    )
+
+    e.subgroup("Computing")
+    e.print_matching(
+        [
+            r"usenix.org/.+",
         ]
     )
 
@@ -142,41 +149,42 @@ break the feeds.
     e.subgroup("Jornais e revistas")
     e.print_matching(
         [
-            r"\bfolha.uol.com.br/.+",
-            r"\bjornaldomediovale.com.br/.+",
-            r"\bdiariodajaragua.com.br/.+",
+            r"folha.uol.com.br/",
+            r"jornaldomediovale.com.br/.+",
+            r"diariodajaragua.com.br/.+",
+            r"oglobo.globo.com/.+",
         ]
     )
 
     e.subgroup("Portais")
     e.print_matching(
         [
-            r"\bnoticias\.uol.com.br/.+",
-            r"\bg1\.globo\.com/.+",
-            r"\bnsctotal.com.br/.+",
-            r"\bcrusoe.uol.com.br/.+",
-            r"\bmigalhas.com.br/.+",
+            r"noticias\.uol.com.br/.+",
+            r"g1\.globo\.com/.+",
+            r"nsctotal.com.br/.+",
+            r"crusoe.com.br/.+",
+            r"migalhas.com.br/.+",
         ]
     )
 
     e.subgroup("Universidades")
-    e.print_matching([r"\budesc\.br/.+"])
+    e.print_matching([r"udesc\.br/.+"])
 
     e.subgroup("Entidades governamentais")
-    e.print_matching([r"\b.+\.(gov|jus|leg|mp)\.br/.+"])
+    e.print_matching([r".+\.(gov|jus|leg|mp)\.br/.+"])
 
     e.subgroup("Cultura em geral")
     e.print_matching(
         [
-            r"\bscar\.art\.br/.*",
-            r"\bacademia\.org\.br/.+",
-            r"\bestadao.com.br/cultura/.+",
-            r"\bomelete\.com\.br/.+",
+            r"scar\.art\.br/.*",
+            r"academia\.org\.br/.+",
+            r"estadao.com.br/cultura/.+",
+            r"omelete\.com\.br/.+",
         ]
     )
 
     e.subgroup("Outros")
-    e.print_matching([r"\baeroin.net"])
+    e.print_matching([r"aeroin.net", r"idec.org.br/"])
 
 
 if __name__ == "__main__":
