@@ -4,7 +4,7 @@ newslinkrss generates RSS feeds for websites that do not provide their own.
 It works by loading URLs with lists of articles, looking for links matching
 regular expressions, and optionally visiting them to get more information
 and even processing these target pages with XPath and CSS Selectors if
-necessary. It is basically a purpose specific crawler or scraper.
+necessary. It is basically a purpose-specific crawler or scraper.
 
 The results are printed as a RSS feed to stdout or optionally to a file. The
 simplest way to use it is just configure your **local** feed reader, like
@@ -782,7 +782,7 @@ choice for typical use cases, but there is an option `--no-cookies` to disable
 all cookies if it becomes a problem for a particular source.
 
 Conversely, sites may expect a particular cookies to be set to a specific
-values, for example, to show news from a particular geographic region.
+value, for example, to show news from a particular geographic region.
 Command line option `--cookie` allows the user to define customized cookies
 to handle these cases. This option supports the complete syntax defined by
 [RFC 2965](https://www.rfc-editor.org/rfc/rfc2965.html), but a simple
@@ -792,7 +792,7 @@ repeated as many times as necessary.
 
 If user-defined cookies are used together with option `--no-cookies`, the
 target site will have access to them, but will not be able to change or
-delete them (by overwriting or redefining the expiry date) or set new ones.
+delete them (by overwriting or redefining the expiry date) or set new cookies.
 This results in a read-only cookie jar that can be very useful for sites that
 require cookies but use them to change behavior in unwanted ways after some
 number of pages are processed.
