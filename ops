@@ -1,1 +1,1 @@
-{"author":{"id":"d434fbc448f1fa013d3966532ac50d3303cb00e7e416636df73bbf885439f8c0"},"ops":[{"type":1,"timestamp":1707569121,"nonce":"UaXeDpp2JiCG1JpMEzba3jTobbo=","title":"Migrate documentation to Sphinx","message":"This program is getting complex and so is the README.md ; move the documentation to external documents, possibly using Sphinx to generate a website.","files":null}]}
+{"author":{"id":"d434fbc448f1fa013d3966532ac50d3303cb00e7e416636df73bbf885439f8c0"},"ops":[{"type":5,"timestamp":1707569135,"nonce":"4xRKNLZSSfZ73cZ79HfO4KbStEs=","added":["doc"],"removed":null}]}
