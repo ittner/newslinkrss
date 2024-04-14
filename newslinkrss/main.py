@@ -40,6 +40,7 @@ import lxml.cssselect
 import cssselect
 
 
+from . import utils
 from .utils import *
 from .defs import USER_LOG_LEVELS, DEFAULT_USER_AGENT
 from . import cliargs
@@ -47,7 +48,7 @@ from . import parsers
 
 
 logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger("newslinkrss")
+logger = logging.getLogger(__name__)
 
 
 def set_log_level(args):
@@ -59,7 +60,7 @@ def set_log_level(args):
     numlevel = getattr(logging, level, None)
     if not isinstance(numlevel, int):
         raise ValueError("Log level %s not defined" % args.log)
-    logger.setLevel(numlevel)
+    utils.get_top_level_logger().setLevel(numlevel)
     logger.info("Log level set to %d (%s)", numlevel, level)
 
 

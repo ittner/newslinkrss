@@ -123,3 +123,8 @@ def get_regex_first_group(regex, srcstr):
             except IndexError:
                 pass
     return None
+
+
+def get_top_level_logger():
+    """Get a logger for the top level module name."""
+    return logging.getLogger(__name__.split(".", 1)[0])
