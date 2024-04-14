@@ -40,11 +40,10 @@ import lxml.cssselect
 import cssselect
 
 
-from . import utils
-from .utils import *
 from .defs import USER_LOG_LEVELS, DEFAULT_USER_AGENT
 from . import cliargs
 from . import parsers
+from . import utils
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -65,7 +64,7 @@ def set_log_level(args):
 
 
 def make_clean_title(args, title):
-    clean_title = get_regex_first_group(args.title_regex, title) or title
+    clean_title = utils.get_regex_first_group(args.title_regex, title) or title
     return clean_title[: args.max_title_length]
 
 
@@ -172,7 +171,7 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
         try:
             for res in tree.xpath(args.date_from_xpath):
                 logger.debug("date-from-xpath found candidate text: '%s'", res)
-                date = try_date_from_str(
+                date = utils.try_date_from_str(
                     res, args.xpath_date_regex, args.xpath_date_fmt
                 )
                 if date:
@@ -187,7 +186,7 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
                 if etext is None:
                     continue
                 logger.debug("date-from-csss found candidate text: '%s'", etext)
-                date = try_date_from_str(
+                date = utils.try_date_from_str(
                     etext, args.csss_date_regex, args.csss_date_fmt
                 )
                 if date:
@@ -196,9 +195,11 @@ def find_item_date(args, attr_parser, request, tree, anchor_text, orig_url):
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
             logger.exception("When handling a CSS selector")
     if not date and args.date_from_text and anchor_text:
-        date = try_date_from_str(anchor_text, args.date_from_text, args.text_date_fmt)
+        date = utils.try_date_from_str(
+            anchor_text, args.date_from_text, args.text_date_fmt
+        )
     if not date and args.date_from_url and orig_url:
-        date = try_date_from_str(orig_url, args.date_from_url, args.url_date_fmt)
+        date = utils.try_date_from_str(orig_url, args.date_from_url, args.url_date_fmt)
     if not date and attr_parser and attr_parser.changed:
         date = attr_parser.changed
     if not date and request and ("Last-Modified" in request.headers):
@@ -227,7 +228,9 @@ def find_item_author(args, attr_parser, tree):
         try:
             for res in tree.xpath(args.author_from_xpath):
                 if res:
-                    author = get_regex_first_group(args.xpath_author_regex, str(res))
+                    author = utils.get_regex_first_group(
+                        args.xpath_author_regex, str(res)
+                    )
                     break
         except lxml.etree.XPathEvalError:
             logger.exception("When trying to find author from XPath")
@@ -237,7 +240,9 @@ def find_item_author(args, attr_parser, tree):
             for res in tree.cssselect(args.author_from_csss):
                 text = res.text_content()
                 if text is not None:
-                    author = get_regex_first_group(args.csss_author_regex, str(text))
+                    author = utils.get_regex_first_group(
+                        args.csss_author_regex, str(text)
+                    )
                     break
         except (cssselect.parser.SelectorSyntaxError, lxml.etree.XPathEvalError):
             logger.exception("When trying to find author from a CSS selector")
@@ -476,11 +481,15 @@ def test_links(link_grabber, args):
         if itm[1] and itm[1] != "":
             print("    text: " + itm[1])
         if args.date_from_url:
-            date = try_date_from_str(itm[0], args.date_from_url, args.url_date_fmt)
+            date = utils.try_date_from_str(
+                itm[0], args.date_from_url, args.url_date_fmt
+            )
             if date:
                 print("    url-date:  " + str(date))
         if itm[1] and args.date_from_text:
-            date = try_date_from_str(itm[1], args.date_from_text, args.text_date_fmt)
+            date = utils.try_date_from_str(
+                itm[1], args.date_from_text, args.text_date_fmt
+            )
             if date:
                 print("    text-date: " + str(date))
         print("")
@@ -507,14 +516,14 @@ def make_accept_language_header(args):
     langs = []
     if args.lang:
         for lang in args.lang:
-            normalized = normalize_rfc1766_lang_tag(lang)
+            normalized = utils.normalize_rfc1766_lang_tag(lang)
             langs.append(normalized if normalized else lang)
 
     if not langs:
         locale_name = os.getenv("LANG")
         if locale_name:
             locale_name = locale_name.split(".")[0]
-            normalized = normalize_rfc1766_lang_tag(locale_name)
+            normalized = utils.normalize_rfc1766_lang_tag(locale_name)
             if normalized:
                 langs.append(normalized)
 

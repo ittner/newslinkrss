@@ -24,7 +24,7 @@ import re
 import dateutil.parser
 import requests
 
-from .utils import *
+from . import utils
 
 
 logger = logging.getLogger(__name__)
@@ -62,14 +62,14 @@ class CollectLinksParser(HTMLParser):
             return
 
         if tag == "a":
-            href = first_valid_attr_in_list(attrs, "href")
+            href = utils.first_valid_attr_in_list(attrs, "href")
             if not href:
                 return
 
             href = href.split("#", 2)[0]  # Strip URL fragment.
             if self.base_url:
                 href = requests.compat.urljoin(self.base_url, href)
-            href = clean_url_query_string(self.qs_cleanup_rx_list, href)
+            href = utils.clean_url_query_string(self.qs_cleanup_rx_list, href)
 
             # Try to noe follow the same link more than once. We need to
             # repeat this check later due to redirects.
@@ -149,9 +149,9 @@ class CollectAttributesParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == "html":
-            lang = first_valid_attr_in_list(attrs, "lang")
+            lang = utils.first_valid_attr_in_list(attrs, "lang")
             if lang and not self.language:
-                self.language = normalize_rfc1766_lang_tag(lang)
+                self.language = utils.normalize_rfc1766_lang_tag(lang)
                 self._html_locale = True
 
         if tag == "head":
@@ -159,24 +159,24 @@ class CollectAttributesParser(HTMLParser):
             self._in_head = True
 
         if self._in_head and tag == "base":
-            self.base = first_valid_attr_in_list(attrs, "href")
+            self.base = utils.first_valid_attr_in_list(attrs, "href")
 
         if self._in_head and (tag == "title") and (not self.title):
             self._title_lst = []
 
         if self._in_head and tag == "link":
             # <link rel="xxxx" href="yyyy" />
-            rel = first_valid_attr_in_list(attrs, "rel")
-            href = first_valid_attr_in_list(attrs, "href")
+            rel = utils.first_valid_attr_in_list(attrs, "rel")
+            href = utils.first_valid_attr_in_list(attrs, "href")
             if rel == "canonical" and not self.canonical:
                 self.canonical = href
 
         if self._in_head and tag.lower() == "meta":
             # <meta name="xxxx" content="yyyy" />
             # <meta property="xxxx" content="yyyy" />
-            name = first_valid_attr_in_list(attrs, "name")
-            prop = first_valid_attr_in_list(attrs, "property")
-            content = first_valid_attr_in_list(attrs, "content")
+            name = utils.first_valid_attr_in_list(attrs, "name")
+            prop = utils.first_valid_attr_in_list(attrs, "property")
+            content = utils.first_valid_attr_in_list(attrs, "content")
             if name:
                 name = name.lower()
             if prop:
@@ -230,7 +230,7 @@ class CollectAttributesParser(HTMLParser):
                 self.section = content
 
             if (name_or_prop == "og:locale") and content:
-                lang = normalize_rfc1766_lang_tag(content)
+                lang = utils.normalize_rfc1766_lang_tag(content)
                 if self._html_locale and self.language:
                     self.language = lang
                     self._html_locale = False
