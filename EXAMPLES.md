@@ -1,7 +1,7 @@
 
 Here are a few random examples on how newslinkrss can be used to generate
 feeds from several types of sites. They were working (or mostly working!)
-in the moment this file was created but sites can change every time and
+at the moment this file was created but sites can change at any time and
 break the feeds.
 
 
@@ -18,11 +18,11 @@ break the feeds.
 
 #### [Reuters](https://www.reuters.com/)
 
-    newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/
+    newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --body-remove-csss 'div[class^="info-content__toolbar__"], div[data-testid="toolbar-container"], *[class^="social-links__container__"]' --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/
 
 #### [The Washington Post / WaPo](https://www.washingtonpost.com/)
 
-    newslinkrss -n 60 -p '^https://www.washingtonpost.com/.+/\d+/\d+/\d+/.+' --follow --author-from-xpath '//a[@rel="author"]/text()' --with-body --body-csss 'main header h1, main header h2, main header .print-byline, main .article-body' --title-regex '(.*\S)\s*-[^-]*'  -C '.hide-for-print' https://www.washingtonpost.com/
+    newslinkrss -t 5 -n 60 -p '^https://www.washingtonpost.com/.+/\d+/\d+/\d+/.+' --follow --author-from-xpath '//a[@rel="author"]/text()' --with-body --body-csss 'main header h1, main header h2, main header .print-byline, main .article-body' --title-regex '(.*\S)\s*-[^-]*'  -C '.hide-for-print' https://www.washingtonpost.com/
 
 #### [The Economist](https://www.economist.com/)
 
@@ -40,16 +40,36 @@ break the feeds.
 
     newslinkrss --follow -p '.*//nymag.com/intelligencer/(article|\d+/\d+)/.+\.html' --with-body --body-csss 'article' -C 'aside.newsletter-flex-text' -C 'section.package-list' -C 'div.comments-link' -C 'div.tags' -C 'style' https://nymag.com/intelligencer/
 
+#### [NBC News](https://www.nbcnews.com/)
+
+    newslinkrss -p 'https://www.nbcnews.com/.+/.+/.+\d+' -i 'https://www.nbcnews.com/select/.+' -i 'https://www.nbcnews.com/[a-z-]+/video/.+' -i 'https://www.nbcnews.com/news/.+/nbc-affiliates.*\d+' --follow --with-body --body-csss 'article' --title-from-csss h1 --date-from-xpath '//time[@datetime]/@datetime' --author-from-csss '.byline-name a[href*="/author/"]' --categories-from-csss 'header .unibrow a span' -C '.ad-container, .article-social-share-top, .byline-thumbnail picture' https://www.nbcnews.com/
+
+#### [Aviation Week](https://aviationweek.com/)
+
+    newslinkrss -fB -t 4 -p 'https://aviationweek.com/.+/.+/.+' --body-csss 'div.article__header, div.article__body'  --title-from-csss 'h1.page-title' --author-from-csss 'a.article__byline' --date-from-csss 'span.article__date' --categories-from-csss 'ul.tags li a' -i 'https://aviationweek.com/(taxonomy|podcasts|user|knowledge-center)/.+'  -C 'div.share' https://aviationweek.com/
+
+#### [Wired - stories only; no reviews, payola, etc.](https://www.wired.com/)
+
+    newslinkrss -fB -p 'https://www.wired.com/story/.+' --body-csss 'div.body__inner-container' --author-from-xpath '//meta[@property="article:author"]/@content'  --categories-from-xpath '//meta[@name="keywords"]/@content' --split-categories ','  --title-regex '([^|]+)\s*' -T 'Wired Wired - stories only; no reviews, payola, etc.' https://www.wired.com/
+
+#### [Semafor](https://www.semafor.com/)
+
+    newslinkrss -p 'https://www.semafor.com/.+/\d+/\d+/\d+/.+' -fB --body-csss main -C 'form, div[class*="styles_shareWrapper__"], div[class*="styles_mobileShare__"], div[class*="styles_navMenuWrapper__"], div[class*="styles_indexMenu__"]' --author-from-csss 'a[href*="/author/"]' --title-regex '^([^|]+)\s*|' --encoding utf-8 https://www.semafor.com/
+
 
 ## J. R. R. Tolkien
 
-#### [DeviantArt Tolkien search](https://www.deviantart.com/search?q=tolkien)
+#### [DeviantArt Tolkien search](https://www.deviantart.com/tag/tolkien?order=most-recent)
 
-    newslinkrss  -p 'https://www.deviantart.com/.+/art/.+-\d+' --follow --date-from-xpath '(//main//time[@datetime])[1]/@datetime' --with-body --body-xpath '//main/div' -X '//a[@data-hook="deviation_link"]/../../..' -X '//section[@data-hook="action_bar"]' https://www.deviantart.com/search?q=tolkien
+    newslinkrss --follow --with-body -p '^https://www.deviantart.com/.+/art/.+\d+' --body-xpath '//div[@data-hook="arrowL"]/../..//img | //div[@id="description"]' --title-from-csss h1 --date-from-xpath '(//main//time[@datetime]/@datetime)[1]' --author-from-xpath '//h1/../..//a[@data-username]/@data-username' --categories-from-csss 'a[href*="/tag/"].reset-link span' https://www.deviantart.com/tag/tolkien?order=most-recent  https://www.deviantart.com/search?q=tolkien
 
-#### [DeviantArt Tolkien cosplay](https://www.deviantart.com/search?q=tolkiencosplay+or+silmarillioncosplay+or+lotrcosplay)
+#### [DeviantArt Tolkien cosplay](https://www.deviantart.com/tag/lotrcosplay?order=most-recent)
 
-    newslinkrss  -p 'https://www.deviantart.com/.+/art/.+-\d+' --follow --date-from-xpath '(//main//time[@datetime])[1]/@datetime' --with-body --body-xpath '//main/div' -X '//a[@data-hook="deviation_link"]/../../..' -X '//section[@data-hook="action_bar"]' https://www.deviantart.com/search?q=tolkiencosplay+or+silmarillioncosplay+or+lotrcosplay
+    newslinkrss --follow --with-body -p '^https://www.deviantart.com/.+/art/.+\d+' --body-xpath '//div[@data-hook="arrowL"]/../..//img | //div[@id="description"]' --title-from-csss h1 --date-from-xpath '(//main//time[@datetime]/@datetime)[1]' --author-from-xpath '//h1/../..//a[@data-username]/@data-username' --categories-from-csss 'a[href*="/tag/"].reset-link span' https://www.deviantart.com/tag/lotrcosplay?order=most-recent https://www.deviantart.com/tag/silmarillioncosplay?order=most-recent  https://www.deviantart.com/search?q=tolkien+cosplay+or+silmarillion+cosplay+or+lotr+cosplay
+
+#### [Silmarillion-Club DeviantArt Gallery](https://www.deviantart.com/silmarillion-club/gallery/)
+
+    newslinkrss --follow --with-body -p '^https://www.deviantart.com/.+/art/.+\d+' --body-xpath '//div[@data-hook="arrowL"]/../..//img | //div[@id="description"]' --title-from-csss h1 --date-from-xpath '(//time[@datetime]/@datetime)[1]' --author-from-xpath '//h1/../..//a[@data-username]/@data-username' --categories-from-csss 'a[href*="/tag/"].reset-link span' https://www.deviantart.com/silmarillion-club/gallery/
 
 
 ## Science
@@ -60,7 +80,7 @@ break the feeds.
 
 #### [Reuters / Science](https://www.reuters.com/science/)
 
-    newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/science/
+    newslinkrss  --follow  -p 'https://www.reuters.com/.+/.+\d{4}-\d{2}-\d{2}.+'  --max-page-length 512  --with-body  --body-xpath '//article'  --body-remove-csss 'div[class*="article-header__toolbar__"], div[class*="article-body__toolbar__"]'  --body-remove-csss 'div[class*="article__read-next__"], div.read-next-panel'  --body-remove-csss 'div[class^="info-content__toolbar__"], div[data-testid="toolbar-container"], *[class^="social-links__container__"]' --require-dates  --title-regex '(.+)\s+\|'  https://www.reuters.com/science/
 
 
 ## Computing
@@ -78,11 +98,38 @@ break the feeds.
 # Sources in Portuguese / Fontes em Português
 
 
-## Jornais e revistas
+## Jornais, revistas e TVs
 
-#### [Folha de S.Paulo](https://www.folha.uol.com.br/)
+#### [Folha de S.Paulo](https://www1.folha.uol.com.br/ultimas-noticias/)
 
-    newslinkrss --follow -p 'https://www.*\.folha\.uol\.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, .c-signature__author, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --body-rename-attr img data-src src https://www.folha.uol.com.br/
+    newslinkrss --follow -p 'https://www.*\.folha\.uol\.com.br/.+/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, .c-signature__author, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --body-rename-attr img data-src src https://www1.folha.uol.com.br/ultimas-noticias/ https://www.folha.uol.com.br/
+
+#### [Diário da Jaraguá](https://www.diariodajaragua.com.br/jaragua-do-sul/)
+
+    newslinkrss -f -B -p 'https://www.diariodajaragua.com.br/.+/[0-9]+/' --body-xpath '//article' --max-page-length 1024 https://www.diariodajaragua.com.br/jaragua-do-sul/ -X '//a[contains(@href, "https://chat.whatsapp.com")]/..' -C '.squareBanner' -X '//header' -X '//section'
+
+#### [O Globo - Últimas notícias](https://oglobo.globo.com/ultimas-noticias/)
+
+    newslinkrss -p 'https://oglobo.globo.com/.+noticia/\d+/\d+/\d+/.+.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime'  --author-from-xpath '//meta[@itemprop="name"]/@content | //address[@itemprop="author"]/*[@itemprop="name"]' -C 'section.mc-column.box-wrapper, section.passador-materia'  https://oglobo.globo.com/ultimas-noticias/ https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-4 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-5 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-6
+
+#### [Correio Braziliense](https://www.correiobraziliense.com.br/)
+
+    newslinkrss -p 'https://www\.correiobraziliense\.com\.br/.+/\d+/\d+/\d+-.+\.html' -i 'https://www\.correiobraziliense\.com\.br/webstories/.+' -i '.+/brandedcontent/.+' --follow --with-body --body-csss '.materia-title h1, .materia-title h2, article'  -C 'div.entry-headerBox, .noticia_notificacao, div.read-more, section.read-more, #socialBar, .socialBarWrapper' -C 'style, div#tags' --categories-from-csss '#tags ul li a' --encoding utf-8  https://www.correiobraziliense.com.br/
+
+#### [TV Cultura](https://cultura.uol.com.br/entretenimento/)
+
+    newslinkrss -p 'https://cultura.uol.com.br/.+/\d+/\d+/\d+/\d+.+\.html' -p 'https://cultura.uol.com.br/noticias/(.+/)?\d+_.+.html' -fB --body-csss '#programas-box-info aside h2, #programas-box-info aside p, article' --date-from-csss '#programas-box-info aside small' --csss-date-regex '\s*(\d+/\d+/\d+\s+\d+h\d+)\s*' --csss-date-fmt '%d/%m/%Y %Hh%M' --author-from-csss 'span.author' https://cultura.uol.com.br/entretenimento/ https://cultura.uol.com.br/noticias/
+
+
+### Colunistas
+
+#### [O Globo - Elio Gaspari](https://oglobo.globo.com/opiniao/elio-gaspari/)
+
+    newslinkrss -p 'https://oglobo.globo.com/opiniao/elio-gaspari/.+/\d+/\d+/.+\.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address.header-coluna__title' -C 'section.mc-column.box-wrapper, section.passador-materia' https://oglobo.globo.com/opiniao/elio-gaspari/
+
+#### [O Globo - Míriam Leitão](https://oglobo.globo.com/blogs/miriam-leitao/)
+
+    newslinkrss -p 'https://oglobo.globo.com/blogs/miriam-leitao/.+/\d+/\d+/.+\.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address.header-coluna__title' -C 'section.mc-column.box-wrapper, section.passador-materia' https://oglobo.globo.com/blogs/miriam-leitao/ https://oglobo.globo.com/blogs/miriam-leitao/index/feed/pagina-4
 
 #### [Folha de S.Paulo - Hélio Schwartsman](https://www1.folha.uol.com.br/colunas/helioschwartsman/)
 
@@ -96,28 +143,12 @@ break the feeds.
 
     newslinkrss --follow -p 'https://www1.folha.uol.com.br/.+/lygia-maria/\d+/\d+/.+\.shtml' --with-body --body-csss 'header.c-content-head h1, header.c-content-head h2, div.c-signature, div.c-news__body' -C 'div.rs_skip'  --title-regex '(.+) - \d+/\d+/\d+ -\s+.+\s+- Folha' --author-from-csss '.c-signature__author a, cite.c-blog-top__author-name, .c-author__name a, .c-top-columnist__name a' --encoding 'utf-8' --max-page-length 512 --require-dates https://www1.folha.uol.com.br/colunas/lygia-maria/
 
-#### [Jornal do Médio Vale](https://www.jornaldomediovale.com.br/)
-
-    newslinkrss --follow --with-body  -p 'https://(www.)?jornaldomediovale.com.br/\S+\.\d+' --date-from-csss 'ul.post-meta-info > li:last-of-type' --csss-date-regex '\s*(\S.*\S).*' --csss-date-fmt '%d/%m/%Y %H:%M' --body-csss 'div.entry-content' --title-regex '.*/\s*([^/]+)$'  https://www.jornaldomediovale.com.br/
-
-#### [Diário da Jaraguá](https://www.diariodajaragua.com.br/jaragua-do-sul/)
-
-    newslinkrss -f -B -p 'https://www.diariodajaragua.com.br/.+/[0-9]+/' --body-xpath '//article' --max-page-length 1024 https://www.diariodajaragua.com.br/jaragua-do-sul/ -X '//a[contains(@href, "https://chat.whatsapp.com")]/..' -C '.squareBanner' -X '//header' -X '//section'
-
-#### [O Globo - Últimas notícias](https://oglobo.globo.com/ultimas-noticias/)
-
-    newslinkrss -p 'https://oglobo.globo.com/.+noticia/\d+/\d+/\d+/.+.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address[itemprop="author"] a span[itemprop="name"]' -C 'section.mc-column.box-wrapper, section.passador-materia'  https://oglobo.globo.com/ultimas-noticias/ https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-4 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-5 https://oglobo.globo.com/ultimas-noticias/index/feed/pagina-6
-
-#### [O Globo - Elio Gaspari](https://oglobo.globo.com/opiniao/elio-gaspari/)
-
-    newslinkrss -p 'https://oglobo.globo.com/opiniao/elio-gaspari/.+/\d+/\d+/.+\.ghtml' -fB --body-csss 'section.content--header div.content-head, section.content--header div.content__signature, article' --date-from-xpath '//time[@itemprop="datePublished" and @datetime]/@datetime' --author-from-csss 'address.header-coluna__title' -C 'section.mc-column.box-wrapper, section.passador-materia' https://oglobo.globo.com/opiniao/elio-gaspari/
-
 
 ## Portais
 
 #### [UOL - Últimas notícias](https://noticias.uol.com.br/)
 
-    newslinkrss --follow -t 4  -p 'https://noticias.uol.com.br/.+/\d+/\d+/.+' --date-from-xpath '//p[@ia-date-publish]/@ia-date-publish | //article//time[@datetime]/@datetime' --with-body --body-csss 'article div.author, article div.text, main article' --title-regex '(.+)\s+- UOL Notícias' -X '//div[@ia-related-content]' -C 'div.ads-wrapper, .solar-ads, .jupiter-ads, .solar-comment, .jupiter-see-too, .solar-social-media, .jupiter-share' -C 'aside, div.related-content, .related-content-front, div.related-content-piano, .chartbeat-related-content, .related-content-hyperlink, .blogs-and-columns-recommendation' -C 'div.loading-box, div.clearfix, .new-post-notice, .new-post-notice-columnist' -C 'svg' -C 'style' -C 'img.img-author' -C 'div.magazine-cover' -C '.disclaimer-exclusive-content'  --body-rename-attr img data-src src https://noticias.uol.com.br/
+    newslinkrss --follow -t 4  -p 'https://noticias.uol.com.br/.+/\d+/\d+/.+' --date-from-xpath '//p[@ia-date-publish]/@ia-date-publish | //article//time[@datetime]/@datetime' --with-body --body-csss 'article div.author, article div.text, main article' --author-from-csss a.solar-author-name --title-regex '(.+)\s+- UOL Notícias' -X '//div[@ia-related-content]' -C 'div.ads-wrapper, .solar-ads, .jupiter-ads, .solar-comment, .jupiter-see-too, .solar-social-media, .jupiter-share' -C 'aside, div.related-content, .related-content-front, div.related-content-piano, .chartbeat-related-content, .related-content-hyperlink, .blogs-and-columns-recommendation' -C 'div.loading-box, div.clearfix, .new-post-notice, .new-post-notice-columnist' -C 'svg' -C 'style' -C 'img.img-author' -C 'div.magazine-cover' -C '.disclaimer-exclusive-content'  --body-rename-attr img data-src src https://noticias.uol.com.br/
 
 #### [G1 Santa Catarina](https://g1.globo.com/sc/santa-catarina/index/feed/pagina-1.ghtml)
 
@@ -127,9 +158,17 @@ break the feeds.
 
     newslinkrss --follow -p 'https://g1.globo.com/.+parana/.*\d+/\d+/\d+/.+\.ghtml' -i '.+/especial-publicitario/.+' --with-body --body-xpath '//article' -N amp-img img --date-from-xpath '//time[@datetime]/@datetime' --title-regex '([^|]+)'  'https://g1.globo.com/pr/parana/'  $(seq -f "https://g1.globo.com/pr/parana/index/feed/pagina-%.0f.ghtml"  1 5)
 
+#### [NSC Total + tag Jaragua do Sul](https://www.nsctotal.com.br/tag/jaragua-do-sul)
+
+    newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+://www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss '.author a'  --categories-from-csss 'div.tags a.tag' -C '.ad-single, .nsc-content-ads, .related-news, .col-md-auto h3' -C '#h-leia-tambem ~ p, #h-leia-tambem' -C '#h-leia-mais ~ p, #h-leia-mais' -C 'a[href*=whatsapp]'  https://www.nsctotal.com.br/tag/jaragua-do-sul https://www.nsctotal.com.br/tag/jaragua-do-sul?page=2 https://www.nsctotal.com.br/tag/jaragua-do-sul?page=3
+
+#### [Joinville e Região - NSC Total](https://www.nsctotal.com.br/cidades/joinville)
+
+    newslinkrss -t 10 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+://www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss '.author a'  --categories-from-csss 'div.tags a.tag' -C '.ad-single, .nsc-content-ads, .related-news, .col-md-auto h3' -C '#h-leia-tambem ~ p, #h-leia-tambem' -C '#h-leia-mais ~ p, #h-leia-mais' -C 'a[href*=whatsapp]'  https://www.nsctotal.com.br/cidades/joinville https://www.nsctotal.com.br/ultimas/cidades/joinville https://www.nsctotal.com.br/ultimas/cidades/joinville?page=2
+
 #### [NSC Total](https://www.nsctotal.com.br/)
 
-    newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+//www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss 'div.author a' -C 'a[href*=whatsapp]' --categories-from-csss 'div.tags a.tag' -C '.ad-single' https://www.nsctotal.com.br/ https://www.nsctotal.com.br/ultimas-noticias https://www.nsctotal.com.br/ultimas-noticias?paged=2
+    newslinkrss -t 4 -p 'https://www.nsctotal.com.br/(noticias|colunistas/.+)/.+' -i '.+://www.nsctotal.com.br/noticias/noticias-whatsapp-nsc-total' --follow --with-body --body-csss '#post-content' --title-from-csss h1.title --author-from-csss '.author a'  --categories-from-csss 'div.tags a.tag' -C '.ad-single, .nsc-content-ads, .related-news, .col-md-auto h3' -C '#h-leia-tambem ~ p, #h-leia-tambem' -C '#h-leia-mais ~ p, #h-leia-mais' -C 'a[href*=whatsapp]'  https://www.nsctotal.com.br/ https://www.nsctotal.com.br/ultimas-noticias https://www.nsctotal.com.br/ultimas-noticias?paged=2
 
 #### [Crusoé](https://crusoe.com.br/)
 
@@ -155,7 +194,11 @@ break the feeds.
 
 #### [Câmara de Vereadores de Jaraguá do Sul](https://www.jaraguadosul.sc.leg.br/)
 
-    newslinkrss -p 'https://www.jaraguadosul.sc.leg.br/(destaques|geral)/.+' -fB --body-csss '.elementor-widget-theme-post-content' --title-regex '(.*\S)\s*-[^-]+$' https://www.jaraguadosul.sc.leg.br/  https://www.jaraguadosul.sc.leg.br/publicacoes/destaques/ https://www.jaraguadosul.sc.leg.br/geral/
+    newslinkrss -t 5 -p 'https://www.jaraguadosul.sc.leg.br/(destaques|geral)/.+' -fB --body-csss '.elementor-widget-theme-post-content' --title-regex '(.*\S)\s*-[^-]+$' https://www.jaraguadosul.sc.leg.br/  https://www.jaraguadosul.sc.leg.br/publicacoes/destaques/ https://www.jaraguadosul.sc.leg.br/geral/
+
+#### [Prefeitura de Timbó](https://www.timbo.sc.gov.br/noticias)
+
+    newslinkrss -t 5 -p 'https://www.timbo.sc.gov.br/[a-z]+/20\d\d/.+/' --follow --with-body --body-csss article --title-from-csss 'article h1' --date-from-xpath '//article//time[@datetime]/@datetime' --categories-from-csss 'article ul li.entry-category a' -C 'div[role="complementary"], div.td-post-header, footer, div.td_block_related_posts, div#comments' https://www.timbo.sc.gov.br/noticias
 
 #### [ACN - Agência Catarinense de Notícias](https://estado.sc.gov.br/noticias/)
 
@@ -175,7 +218,7 @@ break the feeds.
 
 #### [Instituto Butantan](https://butantan.gov.br/noticias/)
 
-    newslinkrss -t 4 --follow -p '^https://butantan.gov.br/noticias/.+' --max-page-length 2048 --with-body --body-xpath '//h2/..' --date-from-csss 'small' --csss-date-regex '\s*Publicado em:\s*(\d+/\d+/\d+)\s*' --csss-date-fmt '%d/%m/%Y' -C 'style'  https://butantan.gov.br/noticias/
+    newslinkrss -t 10 --follow -p '^https://butantan.gov.br/noticias/.+' --max-page-length 2048 --with-body --body-xpath '//h2/..' --date-from-csss 'small' --csss-date-regex '\s*Publicado em:\s*(\d+/\d+/\d+)\s*' --csss-date-fmt '%d/%m/%Y' -C 'style'  https://butantan.gov.br/noticias/
 
 #### [Poder Judiciário de Santa Catarina](https://www.tjsc.jus.br/web/imprensa/noticias)
 
@@ -187,7 +230,7 @@ break the feeds.
 
 #### [MPF/SC - Santa Catarina](https://www.mpf.mp.br/sc/sala-de-imprensa)
 
-    newslinkrss -t 4 --follow -p 'https://www.mpf.mp.br/.+/noticias-.+/.+' -B --body-csss 'div#content' https://www.mpf.mp.br/sc/sala-de-imprensa
+    newslinkrss -t 10 --follow -p 'https://www.mpf.mp.br/.+/noticias-.+/.+' -B --body-csss 'div#content' https://www.mpf.mp.br/sc/sala-de-imprensa
 
 
 ## Cultura em geral
@@ -206,7 +249,7 @@ break the feeds.
 
 #### [Cultura - Estadão](https://www.estadao.com.br/cultura/)
 
-    newslinkrss -p '^https://www.estadao.com.br/cultura/.+/.+' -t 4 --follow --with-body --body-csss ".authors-info authors-names, #content .content" -C ".ads-placeholder-label, #social-media-lower, .share-container" --date-from-csss 'time' --csss-date-regex '(\d+/\d+/\d+)' --csss-date-fmt '%d/%m/%Y' --title-regex '(.+) - Estadão' --author-from-csss 'div.authors-info .authors-names' --csss-author-regex 'Por\s+(.+)' https://www.estadao.com.br/cultura/
+    newslinkrss -p '^https://www.estadao.com.br/cultura/.+/.+' -t 4 --follow --with-body --body-csss "header h1, header h2, div.informs, #content .content" -C ".ads-placeholder-label, #social-media-lower, .share-container" --date-from-csss 'time' --csss-date-regex '(\d+/\d+/\d+)' --csss-date-fmt '%d/%m/%Y' --title-regex '(.+) - Estadão' --author-from-csss '.informs .names a' --encoding utf-8 https://www.estadao.com.br/cultura/
 
 #### [Omelete](https://www.omelete.com.br/noticias)
 

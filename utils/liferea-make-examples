@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 #
 # newslinkrss - RSS feed generator for generic sites
@@ -101,7 +101,7 @@ def print_examples(args):
         """
 Here are a few random examples on how newslinkrss can be used to generate
 feeds from several types of sites. They were working (or mostly working!)
-in the moment this file was created but sites can change every time and
+at the moment this file was created but sites can change at any time and
 break the feeds.
 
 """
@@ -119,6 +119,10 @@ break the feeds.
             r"kyivpost.com/.+",
             r"abcnews\.go\.com/.+",
             r"nymag\.com/.+",
+            r"nbcnews\.com/.+",
+            r"aviationweek.com/.+",
+            r"wired.com/.+",
+            r"semafor.com/.+",
         ]
     )
 
@@ -126,6 +130,7 @@ break the feeds.
     e.print_matching(
         [
             r"deviantart\.com/.+tolkien.*",
+            r"deviantart\.com/.+silmarillion-club.*",
         ]
     )
 
@@ -146,13 +151,23 @@ break the feeds.
 
     e.group("Sources in Portuguese / Fontes em Português")
 
-    e.subgroup("Jornais e revistas")
+    e.subgroup("Jornais, revistas e TVs")
     e.print_matching(
         [
-            r"folha.uol.com.br/",
+            r"folha.uol.com.br/ultimas-noticias",
             r"jornaldomediovale.com.br/.+",
             r"diariodajaragua.com.br/.+",
-            r"oglobo.globo.com/.+",
+            r"oglobo.globo.com/ultimas-noticias/.+",
+            r"correiobraziliense\.com\.br.+",
+            r"cultura\.uol\.com\.br/.+",
+        ]
+    )
+
+    e.subsubgroup("Colunistas")
+    e.print_matching(
+        [
+            r"oglobo.globo.com/(opiniao|blogs)/[^/]+/",
+            r"folha.uol.com.br/(colunas|autores)/.+",
         ]
     )
 
@@ -178,7 +193,7 @@ break the feeds.
         [
             r"scar\.art\.br/.*",
             r"academia\.org\.br/.+",
-            r"estadao.com.br/cultura/.+",
+            r"estadao.com.br/cultura/?$",
             r"omelete\.com\.br/.+",
         ]
     )
