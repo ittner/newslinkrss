@@ -1,1 +1,1 @@
-{"author":{"id":"d434fbc448f1fa013d3966532ac50d3303cb00e7e416636df73bbf885439f8c0"},"ops":[{"type":1,"timestamp":1714989828,"nonce":"HwawJM25ozU45OnefBLPv8SpK3E=","title":"Create a manpage","message":"Program needs a manual page for the deb package. Generate the argument\ndescriptions from the help with argparse-manpage.","files":null}]}
+{"author":{"id":"d434fbc448f1fa013d3966532ac50d3303cb00e7e416636df73bbf885439f8c0"},"ops":[{"type":5,"timestamp":1714990381,"nonce":"IuCIMg+4Kxp3KEesoxRcFSn3o4k=","added":["doc"],"removed":null}]}
