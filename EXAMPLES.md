@@ -190,7 +190,7 @@ break the feeds.
 
 #### [Prefeitura de Jaraguá do Sul](https://www.jaraguadosul.sc.gov.br/noticias.php)
 
-    newslinkrss -p 'https://www.jaraguadosul.sc.gov.br/news/.+' --http-timeout 10 --follow --with-body --body-csss 'div#area_impressao' --date-from-csss 'small.text-muted > b' --csss-date-fmt '%d/%m/%Y' https://www.jaraguadosul.sc.gov.br/noticias.php
+    newslinkrss -p 'https://www.jaraguadosul.sc.gov.br/news/.+' --http-timeout 10 --follow --with-body --body-csss 'div#area_impressao' --date-from-csss 'small.text-muted > b' https://www.jaraguadosul.sc.gov.br/noticias.php
 
 #### [Câmara de Vereadores de Jaraguá do Sul](https://www.jaraguadosul.sc.leg.br/)
 

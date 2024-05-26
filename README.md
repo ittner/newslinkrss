@@ -487,13 +487,15 @@ very first example and fix some of its limitations:
   in the anchor text, so we need to `--follow` the pages and get the dates
   from there. The pages also have no metadata to do this easily, but they
   have a publish date intended for human readers in a slice of HTML like this:
-  `<small class="text-muted"><b>23/12/2022</b> - some unrelated text</small>`,
+  `<small class="text-muted"><b>2024-05-24</b> - some unrelated text</small>`,
   so it is pretty easy to get it with a CSS selector:
-  `--date-from-csss 'small.text-muted > b'`. It will capture the "23/12/2022"
+  `--date-from-csss 'small.text-muted > b'`. It will capture the "2024-05-24"
   from the text node of inner element "b", no need to filter through
-  `--csss-date-regex` to remove unwanted text, but the date format is still
-  ambiguous so we need to give an explicit format with option
-  `--csss-date-fmt '%d/%m/%Y'`;
+  `--csss-date-regex` to remove unwanted text. The date is also incidentally
+  in the ISO format so newslinkrss can use it automatically, so no need to
+  specify the format (but sites can change at any time; this same site used
+  an ambiguous format that required an explicit format option in a previous
+  version of this document);
 
 - Let's be extra careful with the URL pattern and never capture (or follow!)
   links pointing to other domains. We can replace it with a more restricted
@@ -521,7 +523,6 @@ And then we have our fixed command line:
         --with-body \
         --body-csss 'div#area_impressao' \
         --date-from-csss 'small.text-muted > b' \
-        --csss-date-fmt '%d/%m/%Y' \
         https://www.jaraguadosul.sc.gov.br/noticias.php
 
 ... not perfect, but it gives us a very practical and usable feed!
